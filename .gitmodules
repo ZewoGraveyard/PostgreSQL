@@ -1,0 +1,3 @@
+[submodule "OSX Development/SwiftFoundation"]
+	path = OSX Development/SwiftFoundation
+	url = https://github.com/PureSwift/SwiftFoundation.git
