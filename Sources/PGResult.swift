@@ -138,7 +138,7 @@ public class PGResult: Result {
         return Array(self.fieldIndexByName.keys)
     }()
     
-    public lazy var numberOfAffectedRows: Int = {
+    public lazy var numberOfRowsAffected: Int = {
         guard let str = String.fromCString(PQcmdTuples(self.resultPointer)) else {
             return 0
         }

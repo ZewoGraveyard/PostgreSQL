@@ -76,7 +76,7 @@ Vagrant.configure(2) do |config|
     tar xzf "$FILE_NAME"
     cp -a "$FOLDER_NAME"/. /home/swift/
     cd /home/swift
-    echo 'export PATH=/home/swift/usr/bin:$PATH' >> ~/.profile
+    echo 'PATH=/home/swift/usr/bin:$PATH' >> ~/.profile
 
   SHELL
 end
