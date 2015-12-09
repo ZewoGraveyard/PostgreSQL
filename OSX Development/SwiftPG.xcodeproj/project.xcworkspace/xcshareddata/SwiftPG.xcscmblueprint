@@ -1,0 +1,37 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "3014C92A932180E351A8BBC323068EFE8C6D8A4F",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "3014C92A932180E351A8BBC323068EFE8C6D8A4F" : 0,
+    "4202455695F7B021363B482C067D3C0730DD1B34" : 0,
+    "6DE266EE60EEEBC7266E53F4904DBB0988A2B63B" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "2CB0614F-0B35-4276-BD84-998CB44BBC33",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "3014C92A932180E351A8BBC323068EFE8C6D8A4F" : "SwiftPG\/",
+    "4202455695F7B021363B482C067D3C0730DD1B34" : "SwiftSQL\/OSX%20Development\/SwiftFoundation\/",
+    "6DE266EE60EEEBC7266E53F4904DBB0988A2B63B" : "SwiftSQL\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "SwiftPG",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "OSX Development\/SwiftPG.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:formbound\/SwiftPG.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "3014C92A932180E351A8BBC323068EFE8C6D8A4F"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/PureSwift\/SwiftFoundation.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "4202455695F7B021363B482C067D3C0730DD1B34"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "github.com:formbound\/SwiftSQL.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "6DE266EE60EEEBC7266E53F4904DBB0988A2B63B"
+    }
+  ]
+}

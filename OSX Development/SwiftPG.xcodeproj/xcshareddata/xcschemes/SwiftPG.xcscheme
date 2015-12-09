@@ -28,7 +28,26 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B7DDB9EB1C1796EF00E16DAD"
+               BuildableName = "SwiftPGTests.xctest"
+               BlueprintName = "SwiftPGTests"
+               ReferencedContainer = "container:SwiftPG.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <MacroExpansion>
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "B7DDB9B31C171FCE00E16DAD"
+            BuildableName = "SwiftPG.framework"
+            BlueprintName = "SwiftPG"
+            ReferencedContainer = "container:SwiftPG.xcodeproj">
+         </BuildableReference>
+      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </TestAction>

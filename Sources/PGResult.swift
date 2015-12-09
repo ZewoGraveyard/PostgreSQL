@@ -9,9 +9,13 @@
 import libpq
 import SwiftSQL
 
-public class PGResult : Result {
+public class PGResult: Result {
     
-    public enum Status : Int, ResultStatus {
+    public enum Error : ErrorType {
+        case BadStatus(String)
+    }
+    
+    public enum Status: Int, ResultStatus {
         case EmptyQuery
         case CommandOK
         case TuplesOK
@@ -47,6 +51,9 @@ public class PGResult : Result {
             case PGRES_NONFATAL_ERROR:
                 self = .NonFatalError
                 break
+            case PGRES_FATAL_ERROR:
+                self = .FatalError
+                break
             case PGRES_COPY_BOTH:
                 self = .CopyBoth
                 break
@@ -60,16 +67,53 @@ public class PGResult : Result {
         }
         
         public var successful: Bool {
-            return true
+            return self != .BadResponse && self != .FatalError
         }
     }
     
-    internal init(resultPointer: COpaquePointer) {
+    internal init(resultPointer: COpaquePointer) throws {
         self.resultPointer = resultPointer
+        
+        guard status.successful else {
+            throw Error.BadStatus(String.fromCString(PQresultErrorMessage(resultPointer)) ?? "No error message")
+        }
     }
     
     deinit {
         clear()
+    }
+    
+    private var rowIndex: Int32 = 0
+    
+    public func next() -> PGRow? {
+        
+        guard rowIndex < Int32(numberOfRows) else {
+            return nil
+        }
+        
+        var result: [String: PGRow.Value?] = [:]
+        
+        for (key, index) in fieldIndexByName {
+            
+            let index = Int32(index)
+            
+            if PQgetisnull(resultPointer, rowIndex, index) == 1 {
+                result[key] = nil
+            }
+            else {
+                
+                guard let string = String.fromCString(PQgetvalue(resultPointer, rowIndex, index)) else {
+                    result[key] = nil
+                    continue
+                }
+                
+                result[key] = PGRow.Value(stringValue: string)
+            }
+        }
+        
+        rowIndex += 1
+        
+        return PGRow(valuesByName: result)
     }
     
     public var status: Status {
@@ -82,22 +126,36 @@ public class PGResult : Result {
         PQclear(resultPointer)
     }
     
-    public var numberOfRows: Int {
-        return Int(PQntuples(resultPointer))
-    }
+    public lazy var numberOfRows: Int = {
+        return Int(PQntuples(self.resultPointer))
+    }()
+    
+    public lazy var numberOfFields: Int = {
+        return Int(PQnfields(self.resultPointer))
+    }()
     
     public lazy var fieldNames: [String] = {
-        let numFields = Int(PQnfields(self.resultPointer))
+        return Array(self.fieldIndexByName.keys)
+    }()
+    
+    public lazy var numberOfAffectedRows: Int = {
+        guard let str = String.fromCString(PQcmdTuples(self.resultPointer)) else {
+            return 0
+        }
         
-        var result: [String] = []
-        result.reserveCapacity(numFields)
+        return Int(str) ?? 0
+    }()
+    
+    public lazy var fieldIndexByName: [String: Int] = {
         
-        for i in 0..<numFields {
+        var result: [String: Int] = [:]
+        
+        for i in 0..<self.numberOfFields {
             guard let fieldName = String.fromCString(PQfname(self.resultPointer, Int32(i))) else {
                 continue
             }
             
-            result.append(fieldName)
+            result[fieldName] = i
         }
         
         return result
