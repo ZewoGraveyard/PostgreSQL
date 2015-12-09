@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B70F250F1C18DA130000A63E /* PGField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70F250E1C18DA130000A63E /* PGField.swift */; };
 		B731E59B1C18107B00495160 /* libpq.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = B731E59A1C18107B00495160 /* libpq.tbd */; };
 		B7DDB9B81C171FCE00E16DAD /* SwiftPG.h in Headers */ = {isa = PBXBuildFile; fileRef = B7DDB9B71C171FCE00E16DAD /* SwiftPG.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B7DDB9C11C171FD600E16DAD /* PGConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DDB9C01C171FD600E16DAD /* PGConnection.swift */; };
@@ -41,6 +42,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B70F250E1C18DA130000A63E /* PGField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PGField.swift; sourceTree = "<group>"; };
 		B731E59A1C18107B00495160 /* libpq.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpq.tbd; path = usr/lib/libpq.tbd; sourceTree = SDKROOT; };
 		B731E59C1C1810F400495160 /* libpq.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libpq.framework; sourceTree = SOURCE_ROOT; };
 		B7B6C9241C18335C000669E7 /* SwiftSQL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SwiftSQL.xcodeproj; path = "../../SwiftSQL/OSX Development/SwiftSQL.xcodeproj"; sourceTree = "<group>"; };
@@ -120,6 +122,7 @@
 				B7DDB9C01C171FD600E16DAD /* PGConnection.swift */,
 				B7DDB9E41C178E7F00E16DAD /* PGResult.swift */,
 				B7E5773A1C183AA400D0501A /* PGRow.swift */,
+				B70F250E1C18DA130000A63E /* PGField.swift */,
 			);
 			name = Sources;
 			path = ../../Sources;
@@ -262,6 +265,7 @@
 				B7E5773B1C183AA400D0501A /* PGRow.swift in Sources */,
 				B7DDB9C11C171FD600E16DAD /* PGConnection.swift in Sources */,
 				B7DDB9E51C178E7F00E16DAD /* PGResult.swift in Sources */,
+				B70F250F1C18DA130000A63E /* PGField.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

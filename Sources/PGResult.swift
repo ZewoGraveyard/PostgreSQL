@@ -11,6 +11,7 @@ import SwiftSQL
 
 public class PGResult: Result {
     
+    
     public enum Error : ErrorType {
         case BadStatus(String)
     }
@@ -83,38 +84,59 @@ public class PGResult: Result {
         clear()
     }
     
-    private var rowIndex: Int32 = 0
+    public typealias Generator = AnyGenerator<PGRow>
     
-    public func next() -> PGRow? {
-        
-        guard rowIndex < Int32(numberOfRows) else {
-            return nil
+    public func generate() -> Generator {
+        var index: Int = 0
+        return anyGenerator {
+            guard index < self.count else {
+                return nil
+            }
+            
+            defer {
+                index += 1
+            }
+            
+            return self[index]
         }
+    }
+    
+    public subscript(index: Int) -> PGRow {
+        let index = Int32(index)
         
         var result: [String: PGRow.Value?] = [:]
         
-        for (key, index) in fieldIndexByName {
+        for (fieldIndex, field) in fields.enumerate() {
+            let fieldIndex = Int32(fieldIndex)
             
-            let index = Int32(index)
-            
-            if PQgetisnull(resultPointer, rowIndex, index) == 1 {
-                result[key] = nil
+            if PQgetisnull(resultPointer, index, fieldIndex) == 1 {
+                result[field.name] = nil
             }
             else {
                 
-                guard let string = String.fromCString(PQgetvalue(resultPointer, rowIndex, index)) else {
-                    result[key] = nil
+                guard let string = String.fromCString(PQgetvalue(resultPointer, index, fieldIndex)) else {
+                    result[field.name] = nil
                     continue
                 }
                 
-                result[key] = PGRow.Value(stringValue: string)
+                result[field.name] = PGRow.Value(stringValue: string)
             }
         }
         
-        rowIndex += 1
-        
         return PGRow(valuesByName: result)
     }
+    
+    public var count: Int {
+        return Int(PQntuples(self.resultPointer))
+    }
+    
+    lazy public var countAffected: Int = {
+        guard let str = String.fromCString(PQcmdTuples(self.resultPointer)) else {
+            return 0
+        }
+        
+        return Int(str) ?? 0
+    }()
     
     public var status: Status {
         return Status(status: PQresultStatus(resultPointer))
@@ -126,38 +148,21 @@ public class PGResult: Result {
         PQclear(resultPointer)
     }
     
-    public lazy var numberOfRows: Int = {
-        return Int(PQntuples(self.resultPointer))
-    }()
     
-    public lazy var numberOfFields: Int = {
-        return Int(PQnfields(self.resultPointer))
-    }()
-    
-    public lazy var fieldNames: [String] = {
-        return Array(self.fieldIndexByName.keys)
-    }()
-    
-    public lazy var numberOfRowsAffected: Int = {
-        guard let str = String.fromCString(PQcmdTuples(self.resultPointer)) else {
-            return 0
-        }
+    public lazy var fields: [PGField] = {
+        var result: [PGField] = []
         
-        return Int(str) ?? 0
-    }()
-    
-    public lazy var fieldIndexByName: [String: Int] = {
-        
-        var result: [String: Int] = [:]
-        
-        for i in 0..<self.numberOfFields {
-            guard let fieldName = String.fromCString(PQfname(self.resultPointer, Int32(i))) else {
+        for i in 0..<PQnfields(self.resultPointer) {
+            guard let fieldName = String.fromCString(PQfname(self.resultPointer, i)) else {
                 continue
             }
             
-            result[fieldName] = i
+            result.append(
+                PGField(name: fieldName)
+            )
         }
         
         return result
+        
     }()
 }

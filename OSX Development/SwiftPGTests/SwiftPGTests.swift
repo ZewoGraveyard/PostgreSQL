@@ -31,12 +31,12 @@ class SwiftPGTests: XCTestCase {
             
             let result = try connection.execute("SELECT * FROM films")
             
-            print(result.fieldNames)
-            print(result.numberOfRows)
-            print("OK")
+            print(result.fields)
+            print(result.countAffected)
+           
             
-            while let row = result.next() {
-                print(row["len"])
+            for row in result {
+                print(row["title"])
             }
         }
         catch {
