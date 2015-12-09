@@ -141,21 +141,15 @@ public class PGConnection: Connection {
     }
     
     public func openCursor(name: String) throws {
-        try self.execute("OPEN %@", arguments: name)
+        try self.execute("OPEN \(name)")
     }
     
     public func closeCursor(name: String) throws {
-        try self.execute("CLOSE %@", arguments: name)
+        try self.execute("CLOSE \(name)")
     }
     
     
-    public func execute(string: String, arguments: CVarArgType...) throws -> PGResult {
-        return try PGResult(
-            resultPointer: PQexec(connection, string)
-        )
-    }
-    
-    public func execute(string: String, arguments: [CVarArgType]) throws -> PGResult {
+    public func execute(string: String) throws -> PGResult {
         return try PGResult(
             resultPointer: PQexec(connection, string)
         )
