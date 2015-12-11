@@ -1,8 +1,8 @@
 import libpq
-import SwiftSQL
+import SQL
 
 
-public class PGConnection: Connection {
+public final class Connection: SQL.Connection {
     public enum Error: ErrorType {
         case ConnectFailed(reason: String)
         case ExecutionError(reason: String)
@@ -57,16 +57,9 @@ public class PGConnection: Connection {
         }
     }
     
-    public struct Info: SwiftSQL.ConnectionInfo {
-        
-        public var user: String?
-        public var password: String?
-        public var host: String
-        public var port: UInt = 5432
-        public var database: String
+    public class Info: SQL.ConnectionInfo, ConnectionStringConvertible {
         
         public var connectionString: String {
-            
             var userInfo = ""
             if let user = user {
                 userInfo = user
@@ -82,28 +75,8 @@ public class PGConnection: Connection {
             return "postgres://\(userInfo)\(host):\(port)/\(database)"
         }
         
-        public init(host: String, database: String, port: UInt = 5432, user: String? = nil, password: String? = nil) {
-            self.user = user
-            self.password = password
-            self.host = host
-            self.port = port
-            self.database = database
-        }
-        
-        public init(connectionString: String) {
-            fatalError("Sorry, URL parsing is not available at the moment")
-        }
-        
-        public init(stringLiteral: String) {
-            self.init(connectionString: stringLiteral)
-        }
-        
-        public init(unicodeScalarLiteral value: String) {
-            self.init(stringLiteral: value)
-        }
-        
-        public init(extendedGraphemeClusterLiteral value: String) {
-            self.init(stringLiteral: value)
+        public convenience init(host: String, database: String, user: String? = nil, password: String? = nil) {
+            self.init(host: host, database: database, port: 5432, user: user, password: password)
         }
     }
     
@@ -118,6 +91,7 @@ public class PGConnection: Connection {
     public required init(_ connectionInfo: Info) {
         self.connectionInfo = connectionInfo
     }
+
     
     deinit {
         close()
@@ -141,17 +115,33 @@ public class PGConnection: Connection {
     }
     
     public func openCursor(name: String) throws {
-        try self.execute("OPEN \(name)")
+        try execute("OPEN \(name)")
     }
     
     public func closeCursor(name: String) throws {
-        try self.execute("CLOSE \(name)")
+        try execute("CLOSE \(name)")
     }
     
+    public func createSavePointNamed(name: String) throws {
+        try execute("SAVEPOINT \(name)")
+    }
     
-    public func execute(string: String) throws -> PGResult {
-        return try PGResult(
-            resultPointer: PQexec(connection, string)
+    public func rollbackToSavePointNamed(name: String) throws {
+        try execute("ROLLBACK TO SAVEPOINT \(name)")
+    }
+    
+    public func releaseSavePointNamed(name: String) throws {
+        try execute("RELEASE SAVEPOINT \(name)")
+    }
+    
+    public func execute(string: String) throws -> Result {
+        
+        defer {
+            print(string)
+        }
+        
+        return try Result(
+            PQexec(connection, string)
         )
     }
 }

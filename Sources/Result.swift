@@ -1,19 +1,17 @@
 //
-//  PGResult.swift
-//  SwiftPG
+//  Result.swift
+//  Postgres
 //
 //  Created by David Ask on 08/12/15.
 //  Copyright © 2015 Formbound. All rights reserved.
 //
 
 import libpq
-import SwiftSQL
+import SQL
 
-public class PGResult: Result {
-    
-    
-    public enum Error : ErrorType {
-        case BadStatus(String)
+public class Result: SQL.Result {
+    public enum Error: ErrorType {
+        case BadStatus(Status, String)
     }
     
     public enum Status: Int, ResultStatus {
@@ -72,11 +70,11 @@ public class PGResult: Result {
         }
     }
     
-    internal init(resultPointer: COpaquePointer) throws {
+    internal init(_ resultPointer: COpaquePointer) throws {
         self.resultPointer = resultPointer
         
         guard status.successful else {
-            throw Error.BadStatus(String.fromCString(PQresultErrorMessage(resultPointer)) ?? "No error message")
+            throw Error.BadStatus(status, String.fromCString(PQresultErrorMessage(resultPointer)) ?? "No error message")
         }
     }
     
@@ -84,46 +82,33 @@ public class PGResult: Result {
         clear()
     }
     
-    public typealias Generator = AnyGenerator<PGRow>
     
-    public func generate() -> Generator {
-        var index: Int = 0
-        return anyGenerator {
-            guard index < self.count else {
-                return nil
-            }
-            
-            defer {
-                index += 1
-            }
-            
-            return self[index]
-        }
-    }
-    
-    public subscript(index: Int) -> PGRow {
-        let index = Int32(index)
+    public subscript(position: Int) -> Row {
+        let index = Int32(position)
         
-        var result: [String: PGRow.Value?] = [:]
+        var result: [String: Value] = [:]
         
         for (fieldIndex, field) in fields.enumerate() {
             let fieldIndex = Int32(fieldIndex)
             
             if PQgetisnull(resultPointer, index, fieldIndex) == 1 {
-                result[field.name] = nil
+                result[field.name] = Value(data: [])
             }
             else {
                 
-                guard let string = String.fromCString(PQgetvalue(resultPointer, index, fieldIndex)) else {
-                    result[field.name] = nil
-                    continue
-                }
+                let val = PQgetvalue(resultPointer, index, fieldIndex)
+                let length = Int(PQgetlength(resultPointer, index, fieldIndex))
                 
-                result[field.name] = PGRow.Value(stringValue: string)
+                
+                var buffer = [UInt8](count: length, repeatedValue: 0)
+                
+                memcpy(&buffer, val, length)
+                
+                result[field.name] = Value(data: buffer)
             }
         }
         
-        return PGRow(valuesByName: result)
+        return Row(valuesByName: result)
     }
     
     public var count: Int {
@@ -149,8 +134,8 @@ public class PGResult: Result {
     }
     
     
-    public lazy var fields: [PGField] = {
-        var result: [PGField] = []
+    public lazy var fields: [Field] = {
+        var result: [Field] = []
         
         for i in 0..<PQnfields(self.resultPointer) {
             guard let fieldName = String.fromCString(PQfname(self.resultPointer, i)) else {
@@ -158,7 +143,7 @@ public class PGResult: Result {
             }
             
             result.append(
-                PGField(name: fieldName)
+                Field(name: fieldName)
             )
         }
         

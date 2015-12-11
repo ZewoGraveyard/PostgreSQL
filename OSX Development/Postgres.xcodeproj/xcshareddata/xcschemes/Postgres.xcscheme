@@ -15,9 +15,23 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "B7DDB9B31C171FCE00E16DAD"
-               BuildableName = "SwiftPG.framework"
-               BlueprintName = "SwiftPG"
-               ReferencedContainer = "container:SwiftPG.xcodeproj">
+               BuildableName = "Postgres.framework"
+               BlueprintName = "Postgres"
+               ReferencedContainer = "container:Postgres.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "B73654C51C18E1DE00328B3B"
+               BuildableName = "PostgresTests.xctest"
+               BlueprintName = "PostgresTests"
+               ReferencedContainer = "container:Postgres.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -32,10 +46,10 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B7DDB9EB1C1796EF00E16DAD"
-               BuildableName = "SwiftPGTests.xctest"
-               BlueprintName = "SwiftPGTests"
-               ReferencedContainer = "container:SwiftPG.xcodeproj">
+               BlueprintIdentifier = "B73654C51C18E1DE00328B3B"
+               BuildableName = "PostgresTests.xctest"
+               BlueprintName = "PostgresTests"
+               ReferencedContainer = "container:Postgres.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -43,9 +57,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7DDB9B31C171FCE00E16DAD"
-            BuildableName = "SwiftPG.framework"
-            BlueprintName = "SwiftPG"
-            ReferencedContainer = "container:SwiftPG.xcodeproj">
+            BuildableName = "Postgres.framework"
+            BlueprintName = "Postgres"
+            ReferencedContainer = "container:Postgres.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -65,9 +79,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7DDB9B31C171FCE00E16DAD"
-            BuildableName = "SwiftPG.framework"
-            BlueprintName = "SwiftPG"
-            ReferencedContainer = "container:SwiftPG.xcodeproj">
+            BuildableName = "Postgres.framework"
+            BlueprintName = "Postgres"
+            ReferencedContainer = "container:Postgres.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <AdditionalOptions>
@@ -83,9 +97,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "B7DDB9B31C171FCE00E16DAD"
-            BuildableName = "SwiftPG.framework"
-            BlueprintName = "SwiftPG"
-            ReferencedContainer = "container:SwiftPG.xcodeproj">
+            BuildableName = "Postgres.framework"
+            BlueprintName = "Postgres"
+            ReferencedContainer = "container:Postgres.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
    </ProfileAction>
