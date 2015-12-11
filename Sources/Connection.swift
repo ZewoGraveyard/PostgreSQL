@@ -1,8 +1,8 @@
 import libpq
 import SQL
+import Foundation
 
-
-public final class Connection: SQL.Connection {
+public class Connection: SQL.Connection {
     public enum Error: ErrorType {
         case ConnectFailed(reason: String)
         case ExecutionError(reason: String)
@@ -73,6 +73,46 @@ public final class Connection: SQL.Connection {
             }
             
             return "postgres://\(userInfo)\(host):\(port)/\(database)"
+        }
+        
+        public required convenience init(connectionString: String) {
+            guard let URL = NSURL(string: connectionString) else {
+                fatalError("Invalid connection string")
+            }
+            
+            guard let host = URL.host else {
+                fatalError("Missing host in connection string")
+            }
+            
+            guard let database = URL.pathComponents?.last else {
+                fatalError("Missing database in connection string")
+            }
+            
+            let port = URL.port?.unsignedIntegerValue ?? 5432
+            
+            self.init(
+                host: host,
+                database: database,
+                port: port,
+                user: URL.user,
+                password: URL.password
+            )
+        }
+        
+        public required convenience init(stringLiteral: String) {
+            self.init(connectionString: stringLiteral)
+        }
+        
+        public required convenience init(extendedGraphemeClusterLiteral value: String) {
+            self.init(connectionString: value)
+        }
+        
+        public required convenience init(unicodeScalarLiteral value: String) {
+            self.init(connectionString: value)
+        }
+        
+        public var description: String {
+            return connectionString
         }
         
         public convenience init(host: String, database: String, user: String? = nil, password: String? = nil) {

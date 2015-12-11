@@ -23,12 +23,7 @@ class PostgresTests: XCTestCase {
     }
     
     func testExample() {
-        let conn = Connection(
-            Connection.Info(
-                host: "localhost",
-                database: "swift_test"
-            )
-        )
+        let conn = Connection("postgres://localhost/swift_test")
         
         do {
             
