@@ -6,6 +6,12 @@
 //  Copyright © 2015 Formbound. All rights reserved.
 //
 
+#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
+    import Darwin
+#elseif os(Linux)
+    import Glibc
+#endif
+
 import libpq
 import SQL
 

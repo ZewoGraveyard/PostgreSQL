@@ -100,10 +100,6 @@ public final class Connection: SQL.Connection {
     public func open() throws {
         connection = PQconnectdb(connectionInfo.connectionString)
         
-        while status != .OK && status != .Bad {
-            sleep(1)
-        }
-        
         if let errorMessage = String.fromCString(PQerrorMessage(connection)) where !errorMessage.isEmpty {
             throw Error.ConnectFailed(reason: errorMessage)
         }
