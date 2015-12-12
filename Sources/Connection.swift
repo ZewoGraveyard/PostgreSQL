@@ -1,5 +1,6 @@
 import libpq
 import SQL
+import Foundation
 
 public class Connection: SQL.Connection {
     public enum Error: ErrorType {
