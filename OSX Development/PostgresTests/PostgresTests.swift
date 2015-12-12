@@ -60,7 +60,7 @@ class PostgresTests: XCTestCase {
             
             
             for row in result {
-                print(row["title"]?.string)
+                print(row["id"]?.integer)
             }
             
             //try connection.rollbackToSavePointNamed("my_savepoint")
