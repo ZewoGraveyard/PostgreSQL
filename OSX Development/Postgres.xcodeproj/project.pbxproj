@@ -10,29 +10,15 @@
 		B70F250F1C18DA130000A63E /* Field.swift in Sources */ = {isa = PBXBuildFile; fileRef = B70F250E1C18DA130000A63E /* Field.swift */; };
 		B71B1B291C1A11650016A76E /* Row.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71B1B281C1A11650016A76E /* Row.swift */; };
 		B71B1B2B1C1A11DF0016A76E /* Value.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71B1B2A1C1A11DF0016A76E /* Value.swift */; };
-		B731E59B1C18107B00495160 /* libpq.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = B731E59A1C18107B00495160 /* libpq.tbd */; };
 		B73654C91C18E1DE00328B3B /* PostgresTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B73654C81C18E1DE00328B3B /* PostgresTests.swift */; };
 		B73654CB1C18E1DE00328B3B /* Postgres.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B7DDB9B41C171FCE00E16DAD /* Postgres.framework */; };
+		B7B81DF01C1EE8C200D0639E /* libpq.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = B7B81DEF1C1EE8C200D0639E /* libpq.tbd */; };
 		B7DDB9B81C171FCE00E16DAD /* Postgres.h in Headers */ = {isa = PBXBuildFile; fileRef = B7DDB9B71C171FCE00E16DAD /* Postgres.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		B7DDB9C11C171FD600E16DAD /* Connection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DDB9C01C171FD600E16DAD /* Connection.swift */; };
 		B7DDB9E51C178E7F00E16DAD /* Result.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7DDB9E41C178E7F00E16DAD /* Result.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		B70F25131C18DDE40000A63E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B7B6C9241C18335C000669E7 /* SQL.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = B7DDB9841C16EE2200E16DAD;
-			remoteInfo = SQL;
-		};
-		B70F25171C18DF7F0000A63E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B7B6C9241C18335C000669E7 /* SQL.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = B7DDB9831C16EE2200E16DAD;
-			remoteInfo = SQL;
-		};
 		B73654CC1C18E1DE00328B3B /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = B7DDB9AB1C171FCE00E16DAD /* Project object */;
@@ -40,18 +26,31 @@
 			remoteGlobalIDString = B7DDB9B31C171FCE00E16DAD;
 			remoteInfo = Postgres;
 		};
+		B74D60181C1EDD8400E63E83 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B74D60141C1EDD8300E63E83 /* SQL.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = B7DDB9841C16EE2200E16DAD;
+			remoteInfo = SQL;
+		};
+		B74D601A1C1EDD8B00E63E83 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B74D60141C1EDD8300E63E83 /* SQL.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = B7DDB9831C16EE2200E16DAD;
+			remoteInfo = SQL;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		B70F250E1C18DA130000A63E /* Field.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Field.swift; sourceTree = "<group>"; };
 		B71B1B281C1A11650016A76E /* Row.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Row.swift; sourceTree = "<group>"; };
 		B71B1B2A1C1A11DF0016A76E /* Value.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Value.swift; sourceTree = "<group>"; };
-		B731E59A1C18107B00495160 /* libpq.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpq.tbd; path = usr/lib/libpq.tbd; sourceTree = SDKROOT; };
-		B731E59C1C1810F400495160 /* libpq.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = libpq.framework; sourceTree = SOURCE_ROOT; };
 		B73654C61C18E1DE00328B3B /* PostgresTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PostgresTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B73654C81C18E1DE00328B3B /* PostgresTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostgresTests.swift; sourceTree = "<group>"; };
 		B73654CA1C18E1DE00328B3B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		B7B6C9241C18335C000669E7 /* SQL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQL.xcodeproj; path = "../../SwiftSQL/OSX Development/SQL.xcodeproj"; sourceTree = "<group>"; };
+		B74D60141C1EDD8300E63E83 /* SQL.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQL.xcodeproj; path = "../../SQL/OSX Development/SQL.xcodeproj"; sourceTree = "<group>"; };
+		B7B81DEF1C1EE8C200D0639E /* libpq.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libpq.tbd; path = usr/lib/libpq.tbd; sourceTree = SDKROOT; };
 		B7DDB9B41C171FCE00E16DAD /* Postgres.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Postgres.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		B7DDB9B71C171FCE00E16DAD /* Postgres.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Postgres.h; path = "OSX Development/Postgres/Postgres.h"; sourceTree = "<group>"; };
 		B7DDB9B91C171FCE00E16DAD /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; name = Info.plist; path = "OSX Development/Postgres/Info.plist"; sourceTree = "<group>"; };
@@ -72,21 +71,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B731E59B1C18107B00495160 /* libpq.tbd in Frameworks */,
+				B7B81DF01C1EE8C200D0639E /* libpq.tbd in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		B70F25101C18DDE40000A63E /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				B70F25141C18DDE40000A63E /* SQL.framework */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		B73654C71C18E1DE00328B3B /* PostgresTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -96,11 +87,19 @@
 			path = PostgresTests;
 			sourceTree = "<group>";
 		};
+		B74D60151C1EDD8300E63E83 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B74D60191C1EDD8400E63E83 /* SQL.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 		B7DDB9AA1C171FCE00E16DAD = {
 			isa = PBXGroup;
 			children = (
-				B7B6C9241C18335C000669E7 /* SQL.xcodeproj */,
-				B731E59A1C18107B00495160 /* libpq.tbd */,
+				B7B81DEF1C1EE8C200D0639E /* libpq.tbd */,
+				B74D60141C1EDD8300E63E83 /* SQL.xcodeproj */,
 				B7DDB9B61C171FCE00E16DAD /* Postgres */,
 				B73654C71C18E1DE00328B3B /* PostgresTests */,
 				B7DDB9B51C171FCE00E16DAD /* Products */,
@@ -119,7 +118,6 @@
 		B7DDB9B61C171FCE00E16DAD /* Postgres */ = {
 			isa = PBXGroup;
 			children = (
-				B731E59C1C1810F400495160 /* libpq.framework */,
 				B7DDB9BF1C171FD600E16DAD /* Sources */,
 				B7DDB9B71C171FCE00E16DAD /* Postgres.h */,
 				B7DDB9B91C171FCE00E16DAD /* Info.plist */,
@@ -184,7 +182,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				B70F25181C18DF7F0000A63E /* PBXTargetDependency */,
+				B74D601B1C1EDD8B00E63E83 /* PBXTargetDependency */,
 			);
 			name = Postgres;
 			productName = SwiftPG;
@@ -221,8 +219,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = B70F25101C18DDE40000A63E /* Products */;
-					ProjectRef = B7B6C9241C18335C000669E7 /* SQL.xcodeproj */;
+					ProductGroup = B74D60151C1EDD8300E63E83 /* Products */;
+					ProjectRef = B74D60141C1EDD8300E63E83 /* SQL.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -234,11 +232,11 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		B70F25141C18DDE40000A63E /* SQL.framework */ = {
+		B74D60191C1EDD8400E63E83 /* SQL.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = SQL.framework;
-			remoteRef = B70F25131C18DDE40000A63E /* PBXContainerItemProxy */;
+			remoteRef = B74D60181C1EDD8400E63E83 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -284,15 +282,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		B70F25181C18DF7F0000A63E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = SQL;
-			targetProxy = B70F25171C18DF7F0000A63E /* PBXContainerItemProxy */;
-		};
 		B73654CD1C18E1DE00328B3B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = B7DDB9B31C171FCE00E16DAD /* Postgres */;
 			targetProxy = B73654CC1C18E1DE00328B3B /* PBXContainerItemProxy */;
+		};
+		B74D601B1C1EDD8B00E63E83 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = SQL;
+			targetProxy = B74D601A1C1EDD8B00E63E83 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -301,6 +299,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "${SRCROOT}";
 				INFOPLIST_FILE = PostgresTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.formbound.PostgresTests;
@@ -312,6 +311,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				COMBINE_HIDPI_IMAGES = YES;
+				HEADER_SEARCH_PATHS = "${SRCROOT}";
 				INFOPLIST_FILE = PostgresTests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.formbound.PostgresTests;
@@ -418,6 +418,7 @@
 					"$(PROJECT_DIR)",
 				);
 				FRAMEWORK_VERSION = A;
+				HEADER_SEARCH_PATHS = "${SRCROOT}";
 				INFOPLIST_FILE = Postgres/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
@@ -440,6 +441,7 @@
 					"$(PROJECT_DIR)",
 				);
 				FRAMEWORK_VERSION = A;
+				HEADER_SEARCH_PATHS = "${SRCROOT}";
 				INFOPLIST_FILE = Postgres/Info.plist;
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/Frameworks";
