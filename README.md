@@ -15,7 +15,12 @@ let connection = Connection("postgresql://localhost/movies")
 do {
 	try connection.open()
 	try connection.execute("INSERT INTO films (name) VALUES('Shawshank redemption')")
-	let result = try connection.execute("SELECT * FROM films")
+	let result = try connection.execute(
+	"SELECT * FROM films where title = :title",
+		parameters: [
+			title: "Shawshank redemption"
+		]
+	)
 	for row in result {
         print(row["id"]?.integer)
     }
