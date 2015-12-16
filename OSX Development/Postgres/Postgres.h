@@ -6,7 +6,7 @@
 //  Copyright © 2015 Formbound. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 //! Project version number for Postgres.
 FOUNDATION_EXPORT double PostgresVersionNumber;

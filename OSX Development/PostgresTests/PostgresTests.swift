@@ -29,43 +29,18 @@ class PostgresTests: XCTestCase {
             
             try conn.open()
             
-            try conn.execute("CREATE TABLE IF NOT EXISTS todos (id SERIAL PRIMARY KEY, name varchar(50))")
-            
-//            try conn.begin()
-//            
-//            for i in 0..<100 {
-//                try conn.execute("INSERT INTO todos (name) VALUES('Todo \(i)')")
-//            }
-//        
-//            
-//            try conn.commit()
-            
-            let count = try conn.execute("SELECT COUNT(*) FROM films")
-            var generator = count.generate()
-            
-            print("COUNT: \(count.count)")
-            print("FIRST: \(count.first)")
-            print("LAST: \(count.last)")
-            
-            while let obj = generator.next() {
-                print(obj)
-            }
-        
-            let result = try conn.execute("SELECT * FROM films")
-            
-            //try connection.createSavePointNamed("my_savepoint")
-            
-            print(result.fields)
-            print(result.countAffected)
-            
+
+            let result = try conn.execute(
+                "SELECT * FROM films where title = :title",
+                parameters:  [
+                    "title": "Shawshank Redemption"
+                ]
+            )
+
             
             for row in result {
-                print(row["id"]?.integer)
+                print("Title: \(row["title"]?.string)")
             }
-            
-            //try connection.rollbackToSavePointNamed("my_savepoint")
-            
-            //try connection.releaseSavePointNamed("my_savepoint")
         }
         catch {
             print(error)

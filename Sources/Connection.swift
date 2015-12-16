@@ -174,14 +174,6 @@ public class Connection: SQL.Connection {
         connection = nil
     }
     
-    public func openCursor(name: String) throws {
-        try execute("OPEN \(name)")
-    }
-    
-    public func closeCursor(name: String) throws {
-        try execute("CLOSE \(name)")
-    }
-    
     public func createSavePointNamed(name: String) throws {
         try execute("SAVEPOINT \(name)")
     }
@@ -194,14 +186,33 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func execute(string: String) throws -> Result {
+    public func execute(string: String, parameters: [String: CustomStringConvertible]) throws -> Result {
+        
+        var statement = string
+        
+        let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
         
         defer {
-            print(string)
+            values.destroy()
+            values.dealloc(parameters.count)
         }
         
+        for (i, (key, value)) in parameters.enumerate() {
+            statement = statement.stringByReplacingOccurrencesOfString(":\(key)", withString: "$\(i + 1)")
+            values[i] = UnsafePointer<Int8>(Array(value.description.utf8) + [0])
+        }
+
+        
         return try Result(
-            PQexec(connection, string)
+            PQexecParams(connection,
+                statement,
+                Int32(parameters.count),
+                nil,
+                values,
+                nil,
+                nil,
+                0
+            )
         )
     }
 }
