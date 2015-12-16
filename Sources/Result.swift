@@ -115,11 +115,9 @@ public class Result: SQL.Result {
                 let val = PQgetvalue(resultPointer, index, fieldIndex)
                 let length = Int(PQgetlength(resultPointer, index, fieldIndex))
                 
-                var buffer = [UInt8](count: length, repeatedValue: 0)
-                
-                memcpy(&buffer, val, length)
-                
-                result[field.name] = Value(data: Data(uBytes: buffer))
+                let buffer = UnsafeBufferPointer(start: val, count: length)
+
+                result[field.name] = Value(data: Data(bytes: Array(buffer)))
             }
         }
         

@@ -171,19 +171,20 @@ public class Connection: SQL.Connection {
     }
     
     public func createSavePointNamed(name: String) throws {
-        try execute("SAVEPOINT \(name)")
+        try execute("SAVEPOINT $1", parameters: name)
     }
     
     public func rollbackToSavePointNamed(name: String) throws {
-        try execute("ROLLBACK TO SAVEPOINT \(name)")
+        try execute("ROLLBACK TO SAVEPOINT $1", parameters: name)
     }
     
     public func releaseSavePointNamed(name: String) throws {
-        try execute("RELEASE SAVEPOINT \(name)")
+        try execute("RELEASE SAVEPOINT $1", parameters: name)
     }
     
     public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
-        
+
+        print(statement)
 
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
         
@@ -193,13 +194,13 @@ public class Connection: SQL.Connection {
         }
         
         for (i, value) in parameters.enumerate() {
-            
+
             switch value.SQLParameterData {
             case .Binary(let binary):
                 values[i] = UnsafePointer<Int8>(binary)
                 break
             case .Text(let string):
-                values[i] = UnsafePointer<Int8>(Array(string.utf8) + [0])
+                values[i] = UnsafePointer<Int8>(Array<UInt8>(string.utf8))
                 break
             }
         }
