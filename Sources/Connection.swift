@@ -24,7 +24,7 @@
 
 import CLibpq
 import SQL
-import Foundation
+import Core
 
 public class Connection: SQL.Connection {
     public enum Error: ErrorType {
@@ -100,26 +100,22 @@ public class Connection: SQL.Connection {
         }
         
         public required convenience init(connectionString: String) {
-            guard let URL = NSURL(string: connectionString) else {
-                fatalError("Invalid connection string")
-            }
+            let uri = URI(string: connectionString)
             
-            guard let host = URL.host else {
+            guard let host = uri.host else {
                 fatalError("Missing host in connection string")
             }
             
-            guard let database = URL.pathComponents?.last else {
+            guard let database = uri.path?.componentsSeparatedByString("/").last else {
                 fatalError("Missing database in connection string")
             }
-            
-            let port = URL.port?.unsignedIntegerValue ?? 5432
-            
+
             self.init(
                 host: host,
                 database: database,
-                port: port,
-                user: URL.user,
-                password: URL.password
+                port: UInt(uri.port ?? 5432),
+                user: uri.userInfo?.username,
+                password: uri.userInfo?.password
             )
         }
         
@@ -186,10 +182,9 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func execute(string: String, parameters: [String: CustomStringConvertible]) throws -> Result {
+    public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
         
-        var statement = string
-        
+
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
         
         defer {
@@ -197,12 +192,18 @@ public class Connection: SQL.Connection {
             values.dealloc(parameters.count)
         }
         
-        for (i, (key, value)) in parameters.enumerate() {
-            statement = statement.stringByReplacingOccurrencesOfString(":\(key)", withString: "$\(i + 1)")
-            values[i] = UnsafePointer<Int8>(Array(value.description.utf8) + [0])
+        for (i, value) in parameters.enumerate() {
+            
+            switch value.SQLParameterData {
+            case .Binary(let binary):
+                values[i] = UnsafePointer<Int8>(binary)
+                break
+            case .Text(let string):
+                values[i] = UnsafePointer<Int8>(Array(string.utf8) + [0])
+                break
+            }
         }
 
-        
         return try Result(
             PQexecParams(connection,
                 statement,

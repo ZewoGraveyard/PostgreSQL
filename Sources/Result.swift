@@ -22,14 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if os(OSX) || os(iOS) || os(watchOS) || os(tvOS)
-    import Darwin
-#elseif os(Linux)
-    import Glibc
-#endif
-
 import CLibpq
 import SQL
+import Core
 
 public class Result: SQL.Result {
     public enum Error: ErrorType {
@@ -104,7 +99,6 @@ public class Result: SQL.Result {
         clear()
     }
     
-    
     public subscript(position: Int) -> Row {
         let index = Int32(position)
         
@@ -125,7 +119,7 @@ public class Result: SQL.Result {
                 
                 memcpy(&buffer, val, length)
                 
-                result[field.name] = Value(data: buffer)
+                result[field.name] = Value(data: Data(uBytes: buffer))
             }
         }
         
@@ -153,7 +147,6 @@ public class Result: SQL.Result {
     public func clear() {
         PQclear(resultPointer)
     }
-    
     
     public lazy var fields: [Field] = {
         var result: [Field] = []
