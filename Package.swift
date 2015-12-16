@@ -1,10 +1,10 @@
 import PackageDescription
 import Foundation
 
-#if os(Linux)
-    let libpqURL = "https://github.com/Zewo/CLibpq.git"
+#if os(OSX)
+	let libpqURL = "https://github.com/formbound/CLibpq-OSX.git"
 #else
-    let libpqURL = "https://github.com/formbound/CLibpq-OSX.git"
+	let libpqURL = "https://github.com/Zewo/CLibpq.git"
 #endif
 
 let package = Package(

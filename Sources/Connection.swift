@@ -183,7 +183,6 @@ public class Connection: SQL.Connection {
     }
     
     public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
-        
 
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
         
