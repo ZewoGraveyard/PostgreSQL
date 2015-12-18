@@ -14,7 +14,7 @@ PostgreSQL
 let connection = Connection("postgresql://localhost/movies")
 do {
 	try connection.open()
-	try connection.execute("INSERT INTO films (name) VALUES('Shawshank redemption')")
+	try connection.execute("INSERT INTO films (name) VALUES($1)", parameters: "Shawshank redemption")
 	let result = try connection.execute(
 	"SELECT * FROM films where title = $1", parameters: "Shawshank redemption")
 	for row in result {
