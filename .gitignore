@@ -32,3 +32,6 @@ xcuserdata
 .DS_Store
 .vagrant/
 Vagrantfile
+Scripts
+Makefile
+
