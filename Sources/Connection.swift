@@ -194,16 +194,12 @@ public class Connection: SQL.Connection {
         var temps = [Array<UInt8>]()
         for (i, value) in parameters.enumerate() {
 
-
-
             switch value.SQLParameterData {
             case .Binary(let binary):
                 values[i] = UnsafePointer<Int8>(binary)
                 break
             case .Text(let string):
-                var aa = Array<UInt8>(string.utf8)
-                aa.append(0)
-                temps.append(aa)
+                temps.append(Array<UInt8>(string.utf8) + [0])
                 values[i] = UnsafePointer<Int8>(temps.last!)
                 break
             }
