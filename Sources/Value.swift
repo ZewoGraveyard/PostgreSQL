@@ -26,9 +26,9 @@ import SQL
 import Core
 
 public struct Value: SQL.Value  {
-    
+
     public let data: Data
-    
+
     public init(data: Data) {
         self.data = data
     }
