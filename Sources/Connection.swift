@@ -106,7 +106,7 @@ public class Connection: SQL.Connection {
                 fatalError("Missing host in connection string")
             }
 
-            guard let database = uri.path?.componentsSeparatedByString("/").last else {
+            guard let database = uri.path?.splitBy("/").last else {
                 fatalError("Missing database in connection string")
             }
 
