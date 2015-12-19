@@ -16,7 +16,7 @@ do {
 	try connection.open()
 	try connection.execute("INSERT INTO films (name) VALUES($1)", parameters: "Shawshank redemption")
 	let result = try connection.execute(
-	"SELECT * FROM films where title = $1", parameters: "Shawshank redemption")
+	"SELECT * FROM films where name = $1", parameters: "Shawshank redemption")
 	for row in result {
         print(row["name"]?.string)
     }
