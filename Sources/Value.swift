@@ -24,6 +24,21 @@
 
 import SQL
 import Core
+import CLibpq
+
+public struct Point: SQLParameterConvertible {
+    public let x: Double
+    public let y: Double
+    
+    public init(x: Double, y: Double) {
+        self.x = x
+        self.y = y
+    }
+    
+    public var SQLParameterData: SQLParameterConvertibleType {
+        return .Text("(\(x),\(y))")
+    }
+}
 
 public struct Value: SQL.Value  {
 
@@ -31,5 +46,26 @@ public struct Value: SQL.Value  {
 
     public init(data: Data) {
         self.data = data
+    }
+    
+    public var point: Point? {
+        guard let string = string else {
+            return nil
+        }
+        
+        let stringValues = string.stringByTrimmingCharactersInSet(
+            Set<Character>(["(", ")", " "])
+            ).splitBy(",")
+        
+        guard
+            stringValues.count == 2,
+            let x = Double(stringValues[0]),
+            let y = Double(stringValues[1])
+            else {
+                return nil
+        }
+        
+        return Point(x: x, y: y)
+        
     }
 }
