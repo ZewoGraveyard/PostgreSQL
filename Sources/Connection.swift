@@ -182,6 +182,12 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT $1", parameters: name)
     }
 
+    public func execute(statement: String) throws -> Result {
+        return try Result(
+            PQexec(connection, statement)
+        )
+    }
+    
     public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
 
