@@ -30,6 +30,7 @@ public class Connection: SQL.Connection {
     public enum Error: ErrorType {
         case ConnectFailed(reason: String)
         case ExecutionError(reason: String)
+        case TransactionNotStarted
         case TransactionAlreadyStarted
         case TransactionAborted
     }
@@ -199,6 +200,8 @@ public class Connection: SQL.Connection {
     }
     
     public func transactionEnd() throws {
+        guard activeTransaction else { throw Error.TransactionNotStarted }
+        
         do {
             try execute("COMMIT")
             activeTransaction = false
