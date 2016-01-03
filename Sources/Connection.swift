@@ -212,10 +212,14 @@ public class Connection: SQL.Connection {
         }
     }
 
-    public func execute(statement: String) throws -> Result {
-        return try Result(
-            PQexec(connection, statement)
-        )
+    public func execute(statement: String, parameters: SQLParameterConvertible...) throws -> ResultType {
+        if parameters.isEmpty {
+            return try Result(
+                PQexec(connection, statement)
+            )
+        } else {
+            return try execute(statement, parameters: parameters)
+        }
     }
     
     public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
