@@ -30,6 +30,9 @@ public class Connection: SQL.Connection {
     public enum Error: ErrorType {
         case ConnectFailed(reason: String)
         case ExecutionError(reason: String)
+        case TransactionNotStarted
+        case TransactionAlreadyStarted
+        case TransactionAborted
     }
 
     public enum Status {
@@ -143,24 +146,31 @@ public class Connection: SQL.Connection {
     private(set) public var connectionInfo: Info
 
     private var connection: COpaquePointer = nil
-
+    
+    private var activeTransaction = false
+    
     public var status: Status {
         return Status(status: PQstatus(self.connection))
     }
-
+    
+    private var mostRecentErrorMessage: String? {
+        return String.fromCString(PQerrorMessage(connection))
+    }
+    
     public required init(_ connectionInfo: Info) {
         self.connectionInfo = connectionInfo
     }
 
 
     deinit {
+        if activeTransaction { try? execute("ROLLBACK") }
         close()
     }
 
     public func open() throws {
         connection = PQconnectdb(connectionInfo.connectionString)
 
-        if let errorMessage = String.fromCString(PQerrorMessage(connection)) where !errorMessage.isEmpty {
+        if let errorMessage = mostRecentErrorMessage where !errorMessage.isEmpty {
             throw Error.ConnectFailed(reason: errorMessage)
         }
     }
@@ -169,7 +179,7 @@ public class Connection: SQL.Connection {
         PQfinish(connection)
         connection = nil
     }
-
+    
     public func createSavePointNamed(name: String) throws {
         try execute("SAVEPOINT $1", parameters: name)
     }
@@ -182,6 +192,36 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT $1", parameters: name)
     }
 
+    public func transactionStart() throws {
+        guard !activeTransaction else { throw Error.TransactionAlreadyStarted }
+        
+        try execute("BEGIN")
+        activeTransaction = true
+    }
+    
+    public func transactionEnd() throws {
+        guard activeTransaction else { throw Error.TransactionNotStarted }
+        
+        do {
+            try execute("COMMIT")
+            activeTransaction = false
+        } catch {
+            try execute("ROLLBACK")
+            activeTransaction = false
+            throw Error.TransactionAborted
+        }
+    }
+
+    public func execute(statement: String, parameters: SQLParameterConvertible...) throws -> ResultType {
+        if parameters.isEmpty {
+            return try Result(
+                PQexec(connection, statement)
+            )
+        } else {
+            return try execute(statement, parameters: parameters)
+        }
+    }
+    
     public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
 
@@ -189,7 +229,6 @@ public class Connection: SQL.Connection {
             values.destroy()
             values.dealloc(parameters.count)
         }
-
 
         var temps = [Array<UInt8>]()
         for (i, value) in parameters.enumerate() {
