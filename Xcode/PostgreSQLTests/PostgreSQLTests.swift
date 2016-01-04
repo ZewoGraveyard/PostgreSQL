@@ -34,7 +34,7 @@ class PostgreSQLTests: XCTestCase {
             let result = try connection.execute("SELECT * FROM points")
             
             for row in result {
-                print(row["location"]?.pointValue)
+                print(row["location"]?.point)
                 print(row["location"])
                 print("!")
             }

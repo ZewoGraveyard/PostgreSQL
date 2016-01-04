@@ -524,6 +524,7 @@
 				B7F1A0491C2B30C300568D12 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

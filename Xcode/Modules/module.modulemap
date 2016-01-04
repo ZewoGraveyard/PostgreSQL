@@ -1,8 +1,3 @@
-module CURIParser [system] {
-    header "/usr/local/include/uri_parser/uri_parser.h"
-    link "uri_parser"
-    export *
-}
 
 module CLibpq [system] {
     header "/usr/local/include/libpq-fe.h"
