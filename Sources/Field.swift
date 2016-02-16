@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import SQL
+@_exported import SQL
 
 public struct Field: SQL.Field {
     public var name: String

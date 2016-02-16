@@ -29,8 +29,16 @@ do {
 
 - Install libpq-dev
 
+### Linux
+
 ```bash
 $ (sudo) apt-get install libpq-dev
+```
+
+### OSX
+
+```bash
+$ brew install postgresql
 ```
 
 - Add `PostgreSQL` to your `Package.swift`
@@ -40,7 +48,7 @@ import PackageDescription
 
 let package = Package(
 	dependencies: [
-		.Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0)
+		.Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0, minor: 2)
 	]
 )
 

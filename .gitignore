@@ -1,4 +1,4 @@
-#Created by https://www.gitignore.io/api/xcode
+# Created by https://www.gitignore.io/api/xcode
 
 ### Xcode ###
 # Xcode
@@ -28,10 +28,3 @@ xcuserdata
 *.moved-aside
 *.xcuserstate
 *.xcscmblueprint
-
-.DS_Store
-.vagrant/
-Vagrantfile
-Scripts
-Makefile
-

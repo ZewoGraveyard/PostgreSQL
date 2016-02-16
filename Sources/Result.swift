@@ -22,11 +22,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
 import CLibpq
-import SQL
-import Core
+@_exported import SQL
 
 public class Result: SQL.Result {
+    
     public enum Error: ErrorType {
         case BadStatus(Status, String)
     }
@@ -86,7 +87,7 @@ public class Result: SQL.Result {
             return self != .BadResponse && self != .FatalError
         }
     }
-    
+
     internal init(_ resultPointer: COpaquePointer) throws {
         self.resultPointer = resultPointer
         
@@ -102,26 +103,24 @@ public class Result: SQL.Result {
     public subscript(position: Int) -> Row {
         let index = Int32(position)
         
-        var result: [String: Value] = [:]
+        var result: [String: Data?] = [:]
         
         for (fieldIndex, field) in fields.enumerate() {
             let fieldIndex = Int32(fieldIndex)
             
             if PQgetisnull(resultPointer, index, fieldIndex) == 1 {
-                result[field.name] = Value(data: [])
+                result[field.name] = nil
             }
             else {
                 
-                let val = PQgetvalue(resultPointer, index, fieldIndex)
-                let length = Int(PQgetlength(resultPointer, index, fieldIndex))
-                
-                let buffer = UnsafeBufferPointer(start: val, count: length)
-
-                result[field.name] = Value(data: Data(bytes: Array(buffer)))
+                result[field.name] = Data(
+                    pointer: PQgetvalue(resultPointer, index, fieldIndex),
+                    length: Int(PQgetlength(resultPointer, index, fieldIndex))
+                )
             }
         }
         
-        return Row(valuesByName: result)
+        return Row(dataByFieldName: result)
     }
     
     public var count: Int {

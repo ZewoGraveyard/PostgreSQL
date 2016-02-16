@@ -2,15 +2,12 @@
 //  PostgreSQLTests.swift
 //  PostgreSQLTests
 //
-//  Created by David Ask on 23/12/15.
-//  Copyright © 2015 Zewo. All rights reserved.
+//  Created by David Ask on 15/02/16.
+//  Copyright © 2016 Zewo. All rights reserved.
 //
 
 import XCTest
-import SQL
-import PostgreSQL
-
-
+@testable import PostgreSQL
 
 class PostgreSQLTests: XCTestCase {
     
@@ -25,24 +22,8 @@ class PostgreSQLTests: XCTestCase {
     }
     
     func testExample() {
-        let connection = Connection("postgres://localhost/swift_test")
-        
-        do {
-            try connection.open()
-            try connection.execute("CREATE TABLE IF NOT EXISTS points (id SERIAL PRIMARY KEY, name VARCHAR(256), serial VARCHAR(256) UNIQUE, location POINT)")
-            
-            let result = try connection.execute("SELECT * FROM points")
-            
-            for row in result {
-                print(row["location"]?.point)
-                print(row["location"])
-                print("!")
-            }
-        }
-        catch {
-            print(error)
-            print("!")
-        }
+        // This is an example of a functional test case.
+        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
     
     func testPerformanceExample() {

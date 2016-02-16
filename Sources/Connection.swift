@@ -22,9 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+
+@_exported import SQL
 import CLibpq
-import SQL
-import Core
 
 public class Connection: SQL.Connection {
     public enum Error: ErrorType {
@@ -81,7 +81,7 @@ public class Connection: SQL.Connection {
         }
     }
 
-    public class Info: SQL.ConnectionInfo, ConnectionStringConvertible {
+    public class Info: ConnectionInfo, ConnectionStringConvertible {
 
         public var connectionString: String {
             var userInfo = ""
@@ -100,13 +100,15 @@ public class Connection: SQL.Connection {
         }
 
         public required convenience init(connectionString: String) {
-            let uri = URI(string: connectionString)
+            guard let uri = try? URI(string: connectionString) else {
+                fatalError("Failed to construct URI from \(connectionString)")
+            }
 
             guard let host = uri.host else {
                 fatalError("Missing host in connection string")
             }
 
-            guard let database = uri.path?.splitBy("/").last else {
+            guard let database = uri.path?.split("/").last else {
                 fatalError("Missing database in connection string")
             }
 
@@ -139,6 +141,8 @@ public class Connection: SQL.Connection {
             self.init(host: host, database: database, port: 5432, user: user, password: password)
         }
     }
+
+    public var log: Log? = nil
 
     private(set) public var connectionInfo: Info
 
@@ -182,21 +186,41 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT $1", parameters: name)
     }
 
-    public func execute(statement: String, parameters: [SQLParameterConvertible]) throws -> Result {
-        let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(parameters.count)
+    public func execute(statement: Statement) throws -> Result {
+        
+        defer {
+            if statement.parameters.isEmpty {
+                log?.debug(statement.string)
+            }
+            else {
+                log?.debug("\(statement.string) \(statement.parameters)")
+            }
+        }
+        
+        guard !statement.parameters.isEmpty else {
+            return try Result(PQexec(connection, statement.string))
+        }
+        
+        let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(statement.parameters.count)
 
         defer {
             values.destroy()
-            values.dealloc(parameters.count)
+            values.dealloc(statement.parameters.count)
         }
 
 
         var temps = [Array<UInt8>]()
-        for (i, value) in parameters.enumerate() {
-
-            switch value.SQLParameterData {
-            case .Binary(let binary):
-                values[i] = UnsafePointer<Int8>(binary)
+        for (i, parameter) in statement.parameters.enumerate() {
+            
+            guard let value = parameter?.SQLValue else {
+                temps.append(Array<UInt8>("NULL".utf8) + [0])
+                values[i] = UnsafePointer<Int8>(temps.last!)
+                continue
+            }
+            
+            switch value {
+            case .Binary(let data):
+                values[i] = UnsafePointer<Int8>(Array(data))
                 break
             case .Text(let string):
                 temps.append(Array<UInt8>(string.utf8) + [0])
@@ -207,8 +231,8 @@ public class Connection: SQL.Connection {
 
         return try Result(
             PQexecParams(connection,
-                statement,
-                Int32(parameters.count),
+                statement.string,
+                Int32(statement.parameters.count),
                 nil,
                 values,
                 nil,
