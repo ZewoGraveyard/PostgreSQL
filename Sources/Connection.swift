@@ -152,6 +152,10 @@ public class Connection: SQL.Connection {
         return Status(status: PQstatus(self.connection))
     }
 
+    private var mostRecentErrorMessage: String? {
+        return String.fromCString(PQerrorMessage(connection))
+    }
+
     public required init(_ connectionInfo: Info) {
         self.connectionInfo = connectionInfo
     }
@@ -164,7 +168,7 @@ public class Connection: SQL.Connection {
     public func open() throws {
         connection = PQconnectdb(connectionInfo.connectionString)
 
-        if let errorMessage = String.fromCString(PQerrorMessage(connection)) where !errorMessage.isEmpty {
+        if let errorMessage = mostRecentErrorMessage where !errorMessage.isEmpty {
             throw Error.ConnectFailed(reason: errorMessage)
         }
     }
