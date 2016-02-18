@@ -24,14 +24,14 @@
 
 
 @_exported import SQL
+import Venice
 import CLibpq
 
 public class Connection: SQL.Connection {
-    public enum Error: ErrorType {
-        case ConnectFailed(reason: String)
-        case ExecutionError(reason: String)
+    public struct Error: ErrorType {
+        public let description: String
     }
-
+    
     public enum Status {
         case Bad
         case Started
@@ -43,13 +43,13 @@ public class Connection: SQL.Connection {
         case OK
         case Unknown
         case Needed
-
+        
         public init(status: ConnStatusType) {
             switch status {
             case CONNECTION_NEEDED:
                 self = .Needed
                 break
-
+                
             case CONNECTION_OK:
                 self = .OK
                 break
@@ -80,38 +80,38 @@ public class Connection: SQL.Connection {
             }
         }
     }
-
+    
     public class Info: ConnectionInfo, ConnectionStringConvertible {
-
+        
         public var connectionString: String {
             var userInfo = ""
             if let user = user {
                 userInfo = user
-
+                
                 if let password = password {
                     userInfo += ":\(password)@"
                 }
                 else {
-                  userInfo += "@"
+                    userInfo += "@"
                 }
             }
-
+            
             return "postgresql://\(userInfo)\(host):\(port)/\(database)"
         }
-
+        
         public required convenience init(connectionString: String) {
             guard let uri = try? URI(string: connectionString) else {
                 fatalError("Failed to construct URI from \(connectionString)")
             }
-
+            
             guard let host = uri.host else {
                 fatalError("Missing host in connection string")
             }
-
+            
             guard let database = uri.path?.split("/").last else {
                 fatalError("Missing database in connection string")
             }
-
+            
             self.init(
                 host: host,
                 database: database,
@@ -120,72 +120,89 @@ public class Connection: SQL.Connection {
                 password: uri.userInfo?.password
             )
         }
-
+        
         public required convenience init(stringLiteral: String) {
             self.init(connectionString: stringLiteral)
         }
-
+        
         public required convenience init(extendedGraphemeClusterLiteral value: String) {
             self.init(connectionString: value)
         }
-
+        
         public required convenience init(unicodeScalarLiteral value: String) {
             self.init(connectionString: value)
         }
-
+        
         public var description: String {
             return connectionString
         }
-
+        
         public convenience init(host: String, database: String, user: String? = nil, password: String? = nil) {
             self.init(host: host, database: database, port: 5432, user: user, password: password)
         }
     }
-
+    
     public var log: Log? = nil
-
+    
     private(set) public var connectionInfo: Info
-
+    
     private var connection: COpaquePointer = nil
-
+    
     public var status: Status {
         return Status(status: PQstatus(self.connection))
     }
-
+    
     public required init(_ connectionInfo: Info) {
         self.connectionInfo = connectionInfo
     }
-
-
+    
     deinit {
         close()
     }
-
+    
     public func open() throws {
         connection = PQconnectdb(connectionInfo.connectionString)
-
-        if let errorMessage = String.fromCString(PQerrorMessage(connection)) where !errorMessage.isEmpty {
-            throw Error.ConnectFailed(reason: errorMessage)
+        
+        guard PQsetnonblocking(connection, 1) == 0 else {
+            throw Error(description: "Failed to set non-blocking")
+        }
+        
+        if let error = mostRecentError {
+            throw error
         }
     }
-
+    
+    public var mostRecentError: Error? {
+        guard let errorString = String.fromCString(PQerrorMessage(connection)) where !errorString.isEmpty else {
+            return nil
+        }
+        
+        return Error(description: errorString)
+    }
+    
     public func close() {
         PQfinish(connection)
         connection = nil
     }
-
+    
     public func createSavePointNamed(name: String) throws {
-        try execute("SAVEPOINT $1", parameters: name)
+        try execute(
+            Statement("SAVEPOINT $1", parameters: [name])
+        )
     }
-
+    
     public func rollbackToSavePointNamed(name: String) throws {
-        try execute("ROLLBACK TO SAVEPOINT $1", parameters: name)
+        try execute(
+            Statement("ROLLBACK TO SAVEPOINT $1", parameters: [name])
+        )
     }
-
+    
     public func releaseSavePointNamed(name: String) throws {
-        try execute("RELEASE SAVEPOINT $1", parameters: name)
+        try execute(
+            Statement("RELEASE SAVEPOINT $1", parameters: [name])
+        )
     }
-
+    
     public func execute(statement: Statement) throws -> Result {
         
         defer {
@@ -202,13 +219,13 @@ public class Connection: SQL.Connection {
         }
         
         let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(statement.parameters.count)
-
+        
         defer {
             values.destroy()
             values.dealloc(statement.parameters.count)
         }
-
-
+        
+        
         var temps = [Array<UInt8>]()
         for (i, parameter) in statement.parameters.enumerate() {
             
@@ -228,17 +245,56 @@ public class Connection: SQL.Connection {
                 break
             }
         }
-
-        return try Result(
-            PQexecParams(connection,
-                statement.string,
-                Int32(statement.parameters.count),
-                nil,
-                values,
-                nil,
-                nil,
-                0
-            )
+        
+        let socket = PQsocket(connection)
+        
+        let sendQueryStatus = PQsendQueryParams(
+            self.connection,
+            statement.string,
+            Int32(statement.parameters.count),
+            nil,
+            values,
+            nil,
+            nil,
+            0
         )
+        
+        guard sendQueryStatus == 1 else {
+            throw mostRecentError ?? Error(description: "Failed to send query")
+        }
+        
+        while true {
+            let pollingResult = Venice.poll(socket, events: [.Read])
+            
+            guard pollingResult.contains(.Read) else {
+                if pollingResult.contains(.Error) {
+                    throw Error(description: "Error polling socket")
+                }
+                else if pollingResult.contains(.Timeout) {
+                    throw Error(description: "Timeout polling socket")
+                }
+                continue
+            }
+          
+            guard PQconsumeInput(connection) == 1 else {
+                throw mostRecentError ?? Error(description: "Failed to consume input")
+            }
+            
+            guard PQisBusy(connection) == 0 else {
+                continue
+            }
+            
+            var lastResult: COpaquePointer = nil
+            
+            while true {
+                let res = PQgetResult(connection)
+                
+                if res == nil && lastResult != nil {
+                    return try Result(lastResult)
+                }
+                
+                lastResult = res
+            }
+        }
     }
 }
