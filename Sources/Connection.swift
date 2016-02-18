@@ -203,7 +203,7 @@ public class Connection: SQL.Connection {
         )
     }
     
-    public func execute(statement: Statement) throws -> Result {
+    public func execute(statement: Statement, deadline: Deadline) throws -> Result {
         
         defer {
             if statement.parameters.isEmpty {
@@ -264,7 +264,7 @@ public class Connection: SQL.Connection {
         }
         
         while true {
-            let pollingResult = Venice.poll(socket, events: [.Read])
+            let pollingResult = Venice.poll(socket, events: [.Read], deadline: deadline)
             
             guard pollingResult.contains(.Read) else {
                 if pollingResult.contains(.Error) {
@@ -288,6 +288,10 @@ public class Connection: SQL.Connection {
             
             while true {
                 let res = PQgetResult(connection)
+                
+                guard res != nil || lastResult != nil else {
+                    throw Error(description: "No result to fetch")
+                }
                 
                 if res == nil && lastResult != nil {
                     return try Result(lastResult)
