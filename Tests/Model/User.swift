@@ -40,4 +40,13 @@ extension User: Entity {
         firstName = try row.value(Field.FirstName)
         lastName = try row.value(Field.LastName)
     }
+    
+    func serialize() throws -> [Field : ValueConvertible?] {
+        return [
+            .Username: username,
+            .Password: password,
+            .FirstName: firstName,
+            .LastName: lastName
+        ]
+    }
 }

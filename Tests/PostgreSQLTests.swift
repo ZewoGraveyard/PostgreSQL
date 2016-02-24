@@ -11,7 +11,7 @@ import XCTest
 
 
 class PostgreSQLTests: XCTestCase {
-
+    
     let connection = PostgreSQL.Connection("postgres://localhost/swift_test")
     let log = Log()
     
@@ -33,23 +33,43 @@ class PostgreSQLTests: XCTestCase {
         
         connection.close()
     }
-
-    func testSimpleQuery() throws {
-//        for i in 0...100 {
-//           try self.connection.execute(Statement("SELECT * FROM users WHERE id = $1", parameters: [i]))
-//        }
+    
+    func testSimpleQuery() {
+        do {
+            try self.connection.execute("SELECT * FROM users WHERE id = \(1) OR id = \(2)")
+        }
+        catch {
+            XCTFail("\(error)")
+        }
     }
     
-    func testDSL() throws {
-        let result = try User.select().join(.Inner(Order.self), on: .Id == .UserId).filter(User.Field.Id > 0).fetch(connection)
-        print(result.count)
+    func testDSL() {
+        do {
+            if var user = try User.find(1, connection: connection) {
+                print(user)
+                try user.update([.Username: "David4"], connection: connection)
+                print(user)
+            }
+            print("OK")
+            
+        }
+        catch {
+            XCTFail("\(error)")
+        }
     }
-
+    
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measureBlock {
-           
+            do {
+                try User.select().filter(User.Field.Id == 1 || User.Field.Username == "David" || User.Field.Password == "123456").fetch(self.connection)
+            }
+            catch {
+                XCTFail("\(error)")
+            }
         }
     }
-
+    
 }
+
+

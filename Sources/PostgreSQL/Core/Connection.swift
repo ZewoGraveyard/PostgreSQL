@@ -1,0 +1,220 @@
+// Connection.swift
+//
+// The MIT License (MIT)
+//
+// Copyright (c) 2015 Formbound
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
+@_exported import SQL
+import Venice
+import CLibpq
+
+public class Connection: SQL.Connection {
+    public struct Error: ErrorType {
+        public let description: String
+    }
+    
+    public enum Status {
+        case Bad
+        case Started
+        case Made
+        case AwatingResponse
+        case AuthOK
+        case SettingEnvironment
+        case SSLStartup
+        case OK
+        case Unknown
+        case Needed
+        
+        public init(status: ConnStatusType) {
+            switch status {
+            case CONNECTION_NEEDED:
+                self = .Needed
+                break
+            case CONNECTION_OK:
+                self = .OK
+                break
+            case CONNECTION_STARTED:
+                self = .Started
+                break
+            case CONNECTION_MADE:
+                self = .Made
+                break
+            case CONNECTION_AWAITING_RESPONSE:
+                self = .AwatingResponse
+                break
+            case CONNECTION_AUTH_OK:
+                self = .AuthOK
+                break
+            case CONNECTION_SSL_STARTUP:
+                self = .SSLStartup
+                break
+            case CONNECTION_SETENV:
+                self = .SettingEnvironment
+                break
+            case CONNECTION_BAD:
+                self = .Bad
+                break
+            default:
+                self = .Unknown
+                break
+            }
+        }
+    }
+    
+    public struct Info: ConnectionInfo {
+        
+        public var user: String?
+        public var password: String?
+        public var host: String
+        public var port: Int
+        public var database: String
+        
+        public var connectionString: String {
+            var userInfo = ""
+            if let user = user {
+                userInfo = user
+                
+                if let password = password {
+                    userInfo += ":\(password)@"
+                }
+                else {
+                    userInfo += "@"
+                }
+            }
+            
+            return "postgresql://\(userInfo)\(host):\(port)/\(database)"
+        }
+        
+        public init(host: String, database: String, port: Int? = nil, user: String? = nil, password: String? = nil) {
+            self.host = host
+            self.database = database
+            self.port = port ?? 5432
+            self.user = user
+            self.password = password
+        }
+    }
+    
+    public var log: Log? = nil
+    
+    private(set) public var connectionInfo: Info
+    
+    private var connection: COpaquePointer = nil
+    
+    public var status: Status {
+        return Status(status: PQstatus(self.connection))
+    }
+    
+    public required init(_ connectionInfo: Info) {
+        self.connectionInfo = connectionInfo
+    }
+    
+    deinit {
+        close()
+    }
+    
+    public func open() throws {
+        connection = PQconnectdb(connectionInfo.connectionString)
+        
+        if let error = mostRecentError {
+            throw error
+        }
+    }
+    
+    public var mostRecentError: Error? {
+        guard let errorString = String.fromCString(PQerrorMessage(connection)) where !errorString.isEmpty else {
+            return nil
+        }
+        
+        return Error(description: errorString)
+    }
+    
+    public func close() {
+        PQfinish(connection)
+        connection = nil
+    }
+    
+    public func createSavePointNamed(name: String) throws {
+        try execute("SAVEPOINT \(name)")
+    }
+    
+    public func rollbackToSavePointNamed(name: String) throws {
+        try execute("ROLLBACK TO SAVEPOINT \(name)")
+    }
+    
+    public func releaseSavePointNamed(name: String) throws {
+        try execute("RELEASE SAVEPOINT \(name)")
+    }
+    
+    public func execute(statement: Statement) throws -> Result {
+        
+        defer {
+            log?.debug(statement.description)
+        }
+        
+        let result: COpaquePointer
+        
+        if statement.parameters.isEmpty {
+            result = PQexec(connection, statement.string)
+        }
+        else {
+            let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(statement.parameters.count)
+            
+            defer {
+                values.destroy()
+                values.dealloc(statement.parameters.count)
+            }
+            
+            var temps = [Array<UInt8>]()
+            for (i, parameter) in statement.parameters.enumerate() {
+                
+                guard let value = parameter?.SQLValue else {
+                    temps.append(Array<UInt8>("NULL".utf8) + [0])
+                    values[i] = UnsafePointer<Int8>(temps.last!)
+                    continue
+                }
+                
+                switch value {
+                case .Binary(let data):
+                    values[i] = UnsafePointer<Int8>(Array(data))
+                    break
+                case .Text(let string):
+                    temps.append(Array<UInt8>(string.utf8) + [0])
+                    values[i] = UnsafePointer<Int8>(temps.last!)
+                    break
+                }
+            }
+            
+            result = PQexecParams(
+                self.connection,
+                try statement.stringWithNumberedParametersUsingPrefix("$"),
+                Int32(statement.parameters.count),
+                nil,
+                values,
+                nil,
+                nil,
+                0
+            )
+        }
+        
+        return try Result(result)
+    }
+}
