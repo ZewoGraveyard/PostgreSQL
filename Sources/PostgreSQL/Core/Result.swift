@@ -145,8 +145,8 @@ public class Result: SQL.Result {
         PQclear(resultPointer)
     }
     
-    public lazy var fields: [Field] = {
-        var result: [Field] = []
+    public lazy var fields: [FieldInfo] = {
+        var result: [FieldInfo] = []
         
         for i in 0..<PQnfields(self.resultPointer) {
             guard let fieldName = String.fromCString(PQfname(self.resultPointer, i)) else {
@@ -154,7 +154,7 @@ public class Result: SQL.Result {
             }
             
             result.append(
-                Field(name: fieldName)
+                FieldInfo(name: fieldName)
             )
         }
         

@@ -1,8 +1,8 @@
-// Entity+PostgreSQL.swift
+// Field.swift
 //
 // The MIT License (MIT)
 //
-// Copyright (c) 2016 Formbound
+// Copyright (c) 2015 Formbound
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,10 @@
 
 @_exported import SQL
 
-extension Entity {
+public struct FieldInfo: SQL.FieldInfo {
+    public var name: String
     
+    init(name: String) {
+        self.name = name
+    }
 }

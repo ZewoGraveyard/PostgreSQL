@@ -45,12 +45,21 @@ class PostgreSQLTests: XCTestCase {
     
     func testDSL() {
         do {
+            
             if var user = try User.find(1, connection: connection) {
                 print(user)
-                try user.update([.Username: "David4"], connection: connection)
+                
+                
+                user.lastName = "Askyyy"
+
+                try user.update(connection)
                 print(user)
+                
             }
-            print("OK")
+            
+            
+        
+            print("!")
             
         }
         catch {
@@ -62,7 +71,7 @@ class PostgreSQLTests: XCTestCase {
         // This is an example of a performance test case.
         self.measureBlock {
             do {
-                try User.select().filter(User.Field.Id == 1 || User.Field.Username == "David" || User.Field.Password == "123456").fetch(self.connection)
+                //                try User.select().filter(User.field(.Id) == 1 || User.Field.Username == "David" || User.Field.Password == "123456").fetch(self.connection)
             }
             catch {
                 XCTFail("\(error)")

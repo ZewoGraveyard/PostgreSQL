@@ -16,16 +16,16 @@ struct User {
     var lastName: String?
 }
 
-extension User: Entity {
-    enum Field: String , ModelFieldset{
+extension User: Model {
+    enum Field: String, FieldType {
         case Id = "id"
         case Username = "username"
         case Password = "password"
         case FirstName = "first_name"
         case LastName = "last_name"
-        
-        static let tableName: String = "users"
     }
+    
+    static let tableName: String = "users"
     
     static let fieldForPrimaryKey: Field = .Id
     
@@ -33,15 +33,16 @@ extension User: Entity {
         return id
     }
     
+    
     init(row: Row) throws {
-        id = try row.value(Field.Id)
-        username = try row.value(Field.Username)
-        password = try row.value(Field.Password)
-        firstName = try row.value(Field.FirstName)
-        lastName = try row.value(Field.LastName)
+        id = try row.value(User.field(.Id))
+        username = try row.value(User.field(.Username))
+        password = try row.value(User.field(.Password))
+        firstName = try row.value(User.field(.FirstName))
+        lastName = try row.value(User.field(.LastName))
     }
     
-    func serialize() throws -> [Field : ValueConvertible?] {
+    var persistedValuesByField: [Field: ValueConvertible?] {
         return [
             .Username: username,
             .Password: password,

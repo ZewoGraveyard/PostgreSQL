@@ -13,16 +13,17 @@ struct Order {
     var userId: Int?
     var timestamp: String
     
+    var changes: [Field : ValueConvertible?] = [:]
 }
 
-extension Order: Entity {
-    enum Field: String , ModelFieldset{
+extension Order: Model {
+    enum Field: String, FieldType{
         case Id = "id"
         case UserId = "user_id"
         case Timestamp = "timestamp"
-        
-        static let tableName: String = "orders"
     }
+    
+    static let tableName: String = "orders"
     
     static let fieldForPrimaryKey: Field = .Id
     
@@ -31,9 +32,16 @@ extension Order: Entity {
     }
     
     init(row: Row) throws {
-        id = try row.value(Field.Id)
-        userId = try row.value(Field.UserId)
-        timestamp = try row.value(Field.Timestamp)
+        id = try row.value(Order.field(.Id))
+        userId = try row.value(Order.field(.UserId))
+        timestamp = try row.value(Order.field(.Timestamp))
+    }
+    
+    var persistedValuesByField: [Field: ValueConvertible?] {
+        return [
+            .UserId: userId,
+            .Timestamp: timestamp
+        ]
     }
 }
 
