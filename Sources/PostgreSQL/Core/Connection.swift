@@ -82,7 +82,7 @@ public class Connection: SQL.Connection {
     
     public var log: Log? = nil
     
-    private(set) public var connectionString: String
+    private(set) public var connectionInfo: String
     
     private var connection: COpaquePointer = nil
     
@@ -90,8 +90,8 @@ public class Connection: SQL.Connection {
         return Status(status: PQstatus(self.connection))
     }
     
-    public required init(_ connectionString: String) {
-        self.connectionString = connectionString
+    public required init(_ info: String) {
+        self.connectionInfo = info
     }
     
     deinit {
@@ -99,7 +99,7 @@ public class Connection: SQL.Connection {
     }
     
     public func open() throws {
-        connection = PQconnectdb(connectionString)
+        connection = PQconnectdb(connectionInfo)
         
         if let error = mostRecentError {
             throw error
