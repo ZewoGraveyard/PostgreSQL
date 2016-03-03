@@ -6,7 +6,7 @@
 //
 //
 
-import SQL
+import PostgreSQL
 
 struct User {
     var id: Int?
@@ -14,6 +14,15 @@ struct User {
     var password: String
     var firstName: String?
     var lastName: String?
+    
+    var dirtyFields: [Field] = []
+    
+    init(username: String, password: String, firstName: String?, lastName: String?) {
+        self.username = username
+        self.password = password
+        self.firstName = firstName
+        self.lastName = lastName
+    }
 }
 
 extension User: Model {
@@ -29,6 +38,14 @@ extension User: Model {
     
     static let fieldForPrimaryKey: Field = .Id
     
+    static let selectFields: [Field] = [
+        .Id,
+        .Username,
+        .Password,
+        .FirstName,
+        .LastName
+    ]
+    
     var primaryKey: Int? {
         return id
     }
@@ -42,7 +59,7 @@ extension User: Model {
         lastName = try row.value(User.field(.LastName))
     }
     
-    var persistedValuesByField: [Field: ValueConvertible?] {
+    var persistedValuesByField: [Field: SQLDataConvertible?] {
         return [
             .Username: username,
             .Password: password,

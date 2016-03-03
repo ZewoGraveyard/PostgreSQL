@@ -80,42 +80,9 @@ public class Connection: SQL.Connection {
         }
     }
     
-    public struct Info: ConnectionInfo {
-        
-        public var user: String?
-        public var password: String?
-        public var host: String
-        public var port: Int
-        public var database: String
-        
-        public var connectionString: String {
-            var userInfo = ""
-            if let user = user {
-                userInfo = user
-                
-                if let password = password {
-                    userInfo += ":\(password)@"
-                }
-                else {
-                    userInfo += "@"
-                }
-            }
-            
-            return "postgresql://\(userInfo)\(host):\(port)/\(database)"
-        }
-        
-        public init(host: String, database: String, port: Int? = nil, user: String? = nil, password: String? = nil) {
-            self.host = host
-            self.database = database
-            self.port = port ?? 5432
-            self.user = user
-            self.password = password
-        }
-    }
-    
     public var log: Log? = nil
     
-    private(set) public var connectionInfo: Info
+    private(set) public var connectionString: String
     
     private var connection: COpaquePointer = nil
     
@@ -123,8 +90,8 @@ public class Connection: SQL.Connection {
         return Status(status: PQstatus(self.connection))
     }
     
-    public required init(_ connectionInfo: Info) {
-        self.connectionInfo = connectionInfo
+    public required init(_ connectionString: String) {
+        self.connectionString = connectionString
     }
     
     deinit {
@@ -132,7 +99,7 @@ public class Connection: SQL.Connection {
     }
     
     public func open() throws {
-        connection = PQconnectdb(connectionInfo.connectionString)
+        connection = PQconnectdb(connectionString)
         
         if let error = mostRecentError {
             throw error
@@ -164,29 +131,29 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func execute(statement: Statement) throws -> Result {
+    public func execute(components: QueryComponents) throws -> Result {
         
         defer {
-            log?.debug(statement.description)
+            log?.debug(components.description)
         }
         
         let result: COpaquePointer
         
-        if statement.parameters.isEmpty {
-            result = PQexec(connection, statement.string)
+        if components.values.isEmpty {
+            result = PQexec(connection, components.string)
         }
         else {
-            let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(statement.parameters.count)
+            let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(components.values.count)
             
             defer {
                 values.destroy()
-                values.dealloc(statement.parameters.count)
+                values.dealloc(components.values.count)
             }
             
             var temps = [Array<UInt8>]()
-            for (i, parameter) in statement.parameters.enumerate() {
+            for (i, parameter) in components.values.enumerate() {
                 
-                guard let value = parameter?.SQLValue else {
+                guard let value = parameter else {
                     temps.append(Array<UInt8>("NULL".utf8) + [0])
                     values[i] = UnsafePointer<Int8>(temps.last!)
                     continue
@@ -205,8 +172,8 @@ public class Connection: SQL.Connection {
             
             result = PQexecParams(
                 self.connection,
-                try statement.stringWithNumberedParametersUsingPrefix("$"),
-                Int32(statement.parameters.count),
+                try components.stringWithNumberedValuesUsingPrefix("$"),
+                Int32(components.values.count),
                 nil,
                 values,
                 nil,

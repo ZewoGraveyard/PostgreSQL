@@ -12,7 +12,7 @@ import XCTest
 
 class PostgreSQLTests: XCTestCase {
     
-    let connection = PostgreSQL.Connection("postgres://localhost/swift_test")
+    let connection = Connection("postgres://localhost/swift_test")
     let log = Log()
     
     override func setUp() {
@@ -32,6 +32,13 @@ class PostgreSQLTests: XCTestCase {
         super.tearDown()
         
         connection.close()
+        
+    }
+    
+    func testQueryComponents() {
+        let queryComponents: QueryComponents = "SELECT * FROM users WHERE id = \(1) OR id = \(2)"
+        
+        XCTAssert(queryComponents.values.count == 2)
     }
     
     func testSimpleQuery() {
@@ -45,22 +52,47 @@ class PostgreSQLTests: XCTestCase {
     
     func testDSL() {
         do {
+            let result = try Select(from: "users", fields: "users.id", "users.username")
+                .filter("users.id" == 1)
+                .join("orders", using: .Inner, leftKey: "users.id", rightKey: "orders.user_id")
+                .limit(1)
+                .offset(1)
+                .execute(connection)
             
-            if var user = try User.find(1, connection: connection) {
-                print(user)
-                
-                
-                user.lastName = "Askyyy"
-
-                try user.update(connection)
-                print(user)
-                
-            }
+            print(result)
+        }
+        catch {
+            XCTFail("\(error)")
+        }
+    }
+    
+    func testModelDSL() {
+        do {
+            try User.select
+                .filter(User.field(.Id) == 1)
+                .join(Order.self, type: .Inner, leftKey: .Id, rightKey: .UserId)
+                .order(.Ascending(.Id), .Descending(.FirstName))
+                .limit(10)
+                .offset(1)
+                .fetch(connection)
             
             
-        
-            print("!")
+        }
+        catch {
+            XCTFail("\(error)")
+        }
+    }
+    
+    func testModelInsert() {
+        do {
+            var user = User(
+                username: "TestUser",
+                password: "123145",
+                firstName: "Test",
+                lastName: "User"
+            )
             
+            try user.save(connection)
         }
         catch {
             XCTFail("\(error)")

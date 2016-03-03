@@ -6,18 +6,19 @@
 //
 //
 
-import SQL
+import PostgreSQL
 
 struct Order {
     var id: Int?
     var userId: Int?
     var timestamp: String
     
-    var changes: [Field : ValueConvertible?] = [:]
+    var dirtyFields: [Field] = []
 }
 
+
 extension Order: Model {
-    enum Field: String, FieldType{
+    enum Field: String, FieldType {
         case Id = "id"
         case UserId = "user_id"
         case Timestamp = "timestamp"
@@ -26,6 +27,12 @@ extension Order: Model {
     static let tableName: String = "orders"
     
     static let fieldForPrimaryKey: Field = .Id
+    
+    static let selectFields: [Field] = [
+        .Id,
+        .UserId,
+        .Timestamp
+    ]
     
     var primaryKey: Int? {
         return id
@@ -37,7 +44,7 @@ extension Order: Model {
         timestamp = try row.value(Order.field(.Timestamp))
     }
     
-    var persistedValuesByField: [Field: ValueConvertible?] {
+    var persistedValuesByField: [Field: SQLDataConvertible?] {
         return [
             .UserId: userId,
             .Timestamp: timestamp

@@ -10,8 +10,6 @@ let package = Package(
 	name: "PostgreSQL",
 	dependencies: [
 		.Package(url: libpqURL, majorVersion: 0, minor: 2),
-		.Package(url: "https://github.com/Zewo/SQL.git", majorVersion: 0, minor: 2),
-		.Package(url: "https://github.com/Zewo/CLibvenice.git", majorVersion: 0, minor: 2),
-        .Package(url: "https://github.com/Zewo/CURIParser.git", majorVersion: 0, minor: 2)
+		.Package(url: "https://github.com/Zewo/SQL.git", majorVersion: 0, minor: 3)
 	]
 )

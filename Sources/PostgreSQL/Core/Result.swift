@@ -120,7 +120,7 @@ public class Result: SQL.Result {
             }
         }
         
-        return Row(dataByFieldName: result)
+        return Row(dataByfield: result)
     }
     
     public var count: Int {
