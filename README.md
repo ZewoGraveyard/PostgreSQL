@@ -8,10 +8,6 @@ PostgreSQL
 
 **PostgreSQL** adapter for **Swift 2.2**.
 
-## Usage
-
-Please consult [SQL](https://github.com/Zewo/SQL) for usage.
-
 ## Installation
 
 - Install libpq-dev
