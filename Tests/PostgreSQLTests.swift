@@ -33,71 +33,92 @@ class PostgreSQLTests: XCTestCase {
         }
     }
     
-    func testGenerator() throws {
-        try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
-        try Insert(["name": "Mike Snow"], into: "artists").execute(connection)
-        
-        for row in try connection.execute("SELECT * FROM artists") {
-            let name: String = try row.value("name")
-            let data = try row.data("name")
+    func testGenerator() {
+        do {
+            try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
+            try Insert(["name": "Mike Snow"], into: "artists").execute(connection)
             
-            print(name)
-            print(data)
+            for row in try connection.execute("SELECT * FROM artists") {
+                let name: String = try row.value("name")
+                let data = try row.data("name")
+                
+                print(name)
+                print(data)
+            }
+        }
+        catch {
+            XCTFail("\(error)")
         }
     }
     
-    func testSimpleQueries() throws {
-        try connection.execute("SELECT * FROM artists")
-        try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
+    func testSimpleQueries() {
+        do {
+            try connection.execute("SELECT * FROM artists")
+            try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
+        }
+        catch {
+            XCTFail("\(error)")
+        }
     }
     
-    func testSimpleDSLQueries() throws {
-        
-        try Select(["id", "name"], from: "artists").execute(connection)
-        try Select(from: "artists").execute(connection)
-        try Select(from: "artists").join("albums", using: .Inner, leftKey: "artists.id", rightKey: "albums.artist_id").execute(connection)
-        try Select(from: "artists").limit(10).offset(1).execute(connection)
-        try Select(from: "artists").orderBy(.Descending("name"), .Ascending("id")).execute(connection)
-        
-        try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
-        
-        try Update("artists", set: ["name": "Mike Snow"]).execute(connection)
-        
-        try Delete(from: "albums").execute(connection)
-        
-        try Select(from: "artists").filter(field("genre") == "rock" && field("name").like("%rock") || field("name") == "AC/DC").execute(connection)
-        
-        try Update("artists", set: ["genre": "rock"]).filter(field("name") == "AC/DC").execute(connection)
-        
-        try Delete(from: "artists").filter(field("name") == "Skrillex").execute(connection)
+    func testSimpleDSLQueries() {
+        do {
+            try Select(["id", "name"], from: "artists").execute(connection)
+            try Select(from: "artists").execute(connection)
+            try Select(from: "artists").join("albums", using: .Inner, leftKey: "artists.id", rightKey: "albums.artist_id").execute(connection)
+            try Select(from: "artists").limit(10).offset(1).execute(connection)
+            try Select(from: "artists").orderBy(.Descending("name"), .Ascending("id")).execute(connection)
+            
+            try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
+            
+            try Update("artists", set: ["name": "Mike Snow"]).execute(connection)
+            
+            try Delete(from: "albums").execute(connection)
+            
+            try Select(from: "artists").filter(field("genre") == "rock" && field("name").like("%rock") || field("name") == "AC/DC").execute(connection)
+            
+            try Update("artists", set: ["genre": "rock"]).filter(field("name") == "AC/DC").execute(connection)
+            
+            try Delete(from: "artists").filter(field("name") == "Skrillex").execute(connection)
+        }
+        catch {
+            XCTFail("\(error)")
+        }
     }
     
     
-    func testModelDSLQueries() throws {
+    func testModelDSLQueries() {
         
-        try Artist.select.fetch(connection)
-        try Artist.find(1, connection: connection)
-        try Artist.select.join(Album.self, type: .Inner, leftKey: .Id, rightKey: .ArtistId).execute(connection)
-        try Artist.select.limit(10).offset(1).execute(connection)
-        try Artist.select.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
-        
-        Artist.select.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
-        
-        let newArtist = try Artist.create([.Name: "AC/DC", .Genre: "rock"], connection: connection)
-        print(newArtist)
-        
-        var otherNewArtist = Artist(name: "Mötley Crue", genre: "glam rock")
-        try otherNewArtist.create(connection)
-        
-        print(otherNewArtist)
-        
-        var artist = try Artist.select.first(connection)!
-        artist.genre = "UDPATED2"
-        try artist.setNeedsSaveForField(.Genre)
-        try artist.save(connection)
-        print(artist)
-        
-        try artist.delete(connection)
+        do {
+            try Artist.select.fetch(connection)
+            try Artist.find(1, connection: connection)
+            
+            try Artist.select.limit(10).offset(1).execute(connection)
+            try Artist.select.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
+            
+            Artist.select.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
+            
+            let newArtist = try Artist.create([.Name: "AC/DC", .Genre: "rock"], connection: connection)
+            print(newArtist)
+            
+            var otherNewArtist = Artist(name: "Mötley Crue", genre: "glam rock")
+            try otherNewArtist.create(connection)
+            
+            print(otherNewArtist)
+            
+            Select([Artist.field(.Id)], from: Artist.tableName)
+            
+            var artist = try Artist.select.first(connection)
+            artist?.genre = "UDPATED2"
+            try artist?.setNeedsSaveForField(.Genre)
+            try artist?.save(connection)
+            print(artist)
+            
+            try artist?.delete(connection)
+        }
+        catch {
+            XCTFail("\(error)")
+        }
         
     }
     
