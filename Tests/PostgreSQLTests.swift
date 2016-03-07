@@ -69,9 +69,9 @@ class PostgreSQLTests: XCTestCase {
             try Select(from: "artists").limit(10).offset(1).execute(connection)
             try Select(from: "artists").orderBy(.Descending("name"), .Ascending("id")).execute(connection)
             
-            try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
+            try Insert([Artist.field(.Name): "Lady Gaga"], into: Artist.tableName).execute(connection)
             
-            try Update("artists", set: ["name": "Mike Snow"]).execute(connection)
+            try Update(Artist.tableName, set: [Artist.field(.Name): "Mike Snow"]).execute(connection)
             
             try Delete(from: "albums").execute(connection)
             
@@ -90,13 +90,13 @@ class PostgreSQLTests: XCTestCase {
     func testModelDSLQueries() {
         
         do {
-            try Artist.select.fetch(connection)
+            try Artist.selectQuery.fetch(connection)
             try Artist.find(1, connection: connection)
             
-            try Artist.select.limit(10).offset(1).execute(connection)
-            try Artist.select.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
+            try Artist.selectQuery.limit(10).offset(1).execute(connection)
+            try Artist.selectQuery.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
             
-            Artist.select.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
+            Artist.selectQuery.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
             
             let newArtist = try Artist.create([.Name: "AC/DC", .Genre: "rock"], connection: connection)
             print(newArtist)
@@ -108,7 +108,7 @@ class PostgreSQLTests: XCTestCase {
             
             Select([Artist.field(.Id)], from: Artist.tableName)
             
-            var artist = try Artist.select.first(connection)
+            var artist = try Artist.selectQuery.first(connection)
             artist?.genre = "UDPATED2"
             try artist?.setNeedsSaveForField(.Genre)
             try artist?.save(connection)

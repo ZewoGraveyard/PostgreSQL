@@ -42,10 +42,6 @@ extension Artist: Model {
     var primaryKey: Int? {
         return id
     }
-    
-    static var select: ModelSelect<Artist> {
-        return ModelSelect(declaredSelectFields + [ Album.field(.Id) ]).join(Album.self, using: .Inner, leftKey: .Id, rightKey: .ArtistId)
-    }
 
     init(row: Row) throws {
         id = try row.value(Artist.field(.Id))
