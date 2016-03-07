@@ -91,7 +91,7 @@ class PostgreSQLTests: XCTestCase {
         
         do {
             try Artist.selectQuery.fetch(connection)
-            try Artist.find(1, connection: connection)
+            try Artist.get(1, connection: connection)
             
             try Artist.selectQuery.limit(10).offset(1).execute(connection)
             try Artist.selectQuery.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
@@ -108,13 +108,13 @@ class PostgreSQLTests: XCTestCase {
             
             Select([Artist.field(.Id)], from: Artist.tableName)
             
-            var artist = try Artist.selectQuery.first(connection)
-            artist?.genre = "UDPATED2"
-            try artist?.setNeedsSaveForField(.Genre)
-            try artist?.save(connection)
+            var artist = try Artist.selectQuery.first(connection) ?? Artist(name: "Anonymous", genre: "alternative")
+            artist.genre = "UDPATED2"
+            try artist.setNeedsSave(.Genre)
+            try artist.save(connection)
             print(artist)
             
-            try artist?.delete(connection)
+            try artist.delete(connection)
         }
         catch {
             XCTFail("\(error)")

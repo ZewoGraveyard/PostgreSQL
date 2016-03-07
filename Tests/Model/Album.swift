@@ -17,7 +17,7 @@ struct Album {
     var name: String
     var artistId: Int
     
-    var dirtyFields: [Field]? = []
+    var changedFields: [Field]? = []
     
     init(name: String, artist: Artist) throws {
         guard let artistId = artist.id else {
@@ -41,13 +41,7 @@ extension Album: Model {
     static let tableName: String = "albums"
     
     static let fieldForPrimaryKey: Field = .Id
-    
-    static let selectFields: [Field] = [
-        .Id,
-        .Name,
-        .ArtistId
-    ]
-    
+
     var primaryKey: Int? {
         return id
     }

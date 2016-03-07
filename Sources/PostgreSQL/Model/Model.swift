@@ -14,7 +14,12 @@ public protocol Model: SQL.Model {
 
 public extension Model {
     public mutating func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(connection: T) throws {
+        
+        try validate()
+        
+        willCreate()
         self = try Self.create(persistedValuesByField, connection: connection)
+        didCreate()
     }
     
     public static func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(values: [Field: SQLDataConvertible?], connection: T) throws -> Self {
@@ -28,7 +33,7 @@ public extension Model {
             throw ModelError(description: "Did not receive returned primary key")
         }
         
-        guard let insertedObject = try Self.find(pk, connection: connection) else {
+        guard let insertedObject = try Self.get(pk, connection: connection) else {
             throw ModelError(description: "Could not find model with primary key \(pk)")
         }
         

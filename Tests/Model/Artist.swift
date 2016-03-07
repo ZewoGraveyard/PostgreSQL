@@ -14,7 +14,7 @@ struct Artist {
     var name: String
     var genre: String?
     
-    var dirtyFields: [Field]? = []
+    var changedFields: [Field]? = []
     
     init(name: String, genre: String) {
         self.id = nil
@@ -32,12 +32,7 @@ extension Artist: Model {
     
     static let tableName: String = "artists"
    	static let fieldForPrimaryKey: Field = .Id
-    
-    static let selectFields: [Field] = [
-        .Id,
-        .Name,
-        .Genre
-    ]
+
     
     var primaryKey: Int? {
         return id
@@ -54,5 +49,9 @@ extension Artist: Model {
             .Name: name,
             .Genre: genre
         ]
+    }
+    
+    func willSave() {
+        print("Will save")
     }
 }
