@@ -32,6 +32,17 @@ public class Connection: SQL.Connection {
         public let description: String
     }
     
+    public struct Info: ConnectionInfo {
+        public var host: String
+        public var port: Int
+        public var databaseName: String
+        public var username: String?
+        public var password: String?
+        public var options: String?
+        public var tty: String?
+    }
+    
+    
     public enum Status {
         case Bad
         case Started
@@ -82,7 +93,7 @@ public class Connection: SQL.Connection {
     
     public var log: Log? = nil
     
-    private(set) public var connectionInfo: String
+    private(set) public var connectionInfo: Info
     
     private var connection: COpaquePointer = nil
     
@@ -90,7 +101,11 @@ public class Connection: SQL.Connection {
         return Status(status: PQstatus(self.connection))
     }
     
-    public required init(_ info: String) {
+    public convenience init(host: String, port: Int = 5432, databaseName: String, username: String? = nil, password: String? = nil, options: String? = nil, tty: String? = nil) {
+        self.init(Info(host: host, port: port, databaseName: databaseName, username: username, password: password, options: options, tty: tty))
+    }
+    
+    public required init(_ info: Info) {
         self.connectionInfo = info
     }
     
@@ -99,7 +114,15 @@ public class Connection: SQL.Connection {
     }
     
     public func open() throws {
-        connection = PQconnectdb(connectionInfo)
+        connection = PQsetdbLogin(
+            connectionInfo.host,
+            String(connectionInfo.port),
+            connectionInfo.options ?? "",
+            connectionInfo.tty ?? "",
+            connectionInfo.databaseName,
+            connectionInfo.username ?? "",
+            connectionInfo.password ?? ""
+        )
         
         if let error = mostRecentError {
             throw error

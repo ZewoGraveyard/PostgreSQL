@@ -13,20 +13,25 @@ public protocol Model: SQL.Model {
 }
 
 public extension Model {
-    public mutating func insert<T: SQL.Connection where T.ResultType.Generator.Element == Row>(connection: T) throws {
-        var components = Self.insert(set: persistedValuesByField).queryComponents
+    public mutating func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(connection: T) throws {
+        self = try Self.create(persistedValuesByField, connection: connection)
+    }
+    
+    public static func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(values: [Field: SQLDataConvertible?], connection: T) throws -> Self {
+        let insert: ModelInsert<Self> = ModelInsert(values)
+        var components = insert.queryComponents
         components.append(QueryComponents(strings: ["RETURNING", Self.declaredPrimaryKeyField.qualifiedName, "AS", "returned__pk"]))
         
         let result = try connection.execute(components)
         
-        guard let id: PrimaryKeyType = try result.first?.value("returned__pk") else {
-            fatalError()
+        guard let pk: PrimaryKeyType = try result.first?.value("returned__pk") else {
+            throw ModelError(description: "Did not receive returned primary key")
         }
         
-        guard let newSelf = try Self.find(id, connection: connection) else {
-            fatalError()
+        guard let insertedObject = try Self.find(pk, connection: connection) else {
+            throw ModelError(description: "Could not find model with primary key \(pk)")
         }
         
-        self = newSelf
+        return insertedObject
     }
 }

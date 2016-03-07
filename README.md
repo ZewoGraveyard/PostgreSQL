@@ -10,20 +10,7 @@ PostgreSQL
 
 ## Usage
 
-```swift
-let connection = Connection("postgresql://localhost/movies")
-do {
-	try connection.open()
-	try connection.execute("INSERT INTO films (name) VALUES($1)", parameters: "Shawshank redemption")
-	let result = try connection.execute(
-	"SELECT * FROM films where name = $1", parameters: "Shawshank redemption")
-	for row in result {
-        print(row["name"]?.string)
-    }
-} catch {
-	print(error)
-}
-```
+Please consult [SQL](https://github.com/Zewo/SQL) for usage.
 
 ## Installation
 
@@ -48,7 +35,7 @@ import PackageDescription
 
 let package = Package(
 	dependencies: [
-		.Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0, minor: 2)
+		.Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0, minor: 3)
 	]
 )
 
