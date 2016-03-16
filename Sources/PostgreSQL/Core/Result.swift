@@ -28,7 +28,7 @@ import CLibpq
 
 public class Result: SQL.Result {
     
-    public enum Error: ErrorType {
+    public enum Error: ErrorProtocol {
         case BadStatus(Status, String)
     }
     
@@ -92,7 +92,7 @@ public class Result: SQL.Result {
         self.resultPointer = resultPointer
         
         guard status.successful else {
-            throw Error.BadStatus(status, String.fromCString(PQresultErrorMessage(resultPointer)) ?? "No error message")
+            throw Error.BadStatus(status, String(validatingUTF8: PQresultErrorMessage(resultPointer)) ?? "No error message")
         }
     }
     
@@ -105,7 +105,7 @@ public class Result: SQL.Result {
         
         var result: [String: Data?] = [:]
         
-        for (fieldIndex, field) in fields.enumerate() {
+        for (fieldIndex, field) in fields.enumerated() {
             let fieldIndex = Int32(fieldIndex)
             
             if PQgetisnull(resultPointer, index, fieldIndex) == 1 {
@@ -128,7 +128,7 @@ public class Result: SQL.Result {
     }
     
     lazy public var countAffected: Int = {
-        guard let str = String.fromCString(PQcmdTuples(self.resultPointer)) else {
+        guard let str = String(validatingUTF8: PQcmdTuples(self.resultPointer)) else {
             return 0
         }
         
@@ -149,7 +149,7 @@ public class Result: SQL.Result {
         var result: [FieldInfo] = []
         
         for i in 0..<PQnfields(self.resultPointer) {
-            guard let fieldName = String.fromCString(PQfname(self.resultPointer, i)) else {
+            guard let fieldName = String(validatingUTF8: PQfname(self.resultPointer, i)) else {
                 continue
             }
             

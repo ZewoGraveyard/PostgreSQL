@@ -13,7 +13,7 @@ public protocol Model: SQL.Model {
 }
 
 public extension Model {
-    public mutating func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(connection: T) throws {
+    public mutating func create<T: SQL.Connection where T.ResultType.Iterator.Element == Row>(connection: T) throws {
         
         try validate()
         
@@ -22,7 +22,7 @@ public extension Model {
         didCreate()
     }
     
-    public static func create<T: SQL.Connection where T.ResultType.Generator.Element == Row>(values: [Field: SQLDataConvertible?], connection: T) throws -> Self {
+    public static func create<T: SQL.Connection where T.ResultType.Iterator.Element == Row>(values: [Field: SQLDataConvertible?], connection: T) throws -> Self {
         let insert: ModelInsert<Self> = ModelInsert(values)
         var components = insert.queryComponents
         components.append(QueryComponents(strings: ["RETURNING", Self.declaredPrimaryKeyField.qualifiedName, "AS", "returned__pk"]))

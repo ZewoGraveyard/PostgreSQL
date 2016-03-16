@@ -28,7 +28,7 @@ import Venice
 import CLibpq
 
 public class Connection: SQL.Connection {
-    public struct Error: ErrorType {
+    public struct Error: ErrorProtocol {
         public let description: String
     }
     
@@ -130,7 +130,7 @@ public class Connection: SQL.Connection {
     }
     
     public var mostRecentError: Error? {
-        guard let errorString = String.fromCString(PQerrorMessage(connection)) where !errorString.isEmpty else {
+        guard let errorString = String(validatingUTF8: PQerrorMessage(connection)) where !errorString.isEmpty else {
             return nil
         }
         
@@ -166,15 +166,15 @@ public class Connection: SQL.Connection {
             result = PQexec(connection, components.string)
         }
         else {
-            let values = UnsafeMutablePointer<UnsafePointer<Int8>>.alloc(components.values.count)
+            let values = UnsafeMutablePointer<UnsafePointer<Int8>>(allocatingCapacity: components.values.count)
             
             defer {
                 values.destroy()
-                values.dealloc(components.values.count)
+                values.deallocateCapacity(components.values.count)
             }
             
             var temps = [Array<UInt8>]()
-            for (i, parameter) in components.values.enumerate() {
+            for (i, parameter) in components.values.enumerated() {
                 
                 guard let value = parameter else {
                     temps.append(Array<UInt8>("NULL".utf8) + [0])

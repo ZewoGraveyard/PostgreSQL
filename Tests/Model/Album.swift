@@ -9,7 +9,7 @@
 import PostgreSQL
 
 struct Album {
-    struct Error: ErrorType {
+    struct Error: ErrorProtocol {
         let description: String
     }
     
