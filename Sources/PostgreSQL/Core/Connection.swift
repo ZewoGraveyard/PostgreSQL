@@ -95,7 +95,7 @@ public class Connection: SQL.Connection {
     
     private(set) public var connectionInfo: Info
     
-    private var connection: COpaquePointer = nil
+    private var connection: OpaquePointer = nil
     
     public var status: Status {
         return Status(status: PQstatus(self.connection))
@@ -160,7 +160,7 @@ public class Connection: SQL.Connection {
             log?.debug(components.description)
         }
         
-        let result: COpaquePointer
+        let result: OpaquePointer
         
         if components.values.isEmpty {
             result = PQexec(connection, components.string)
@@ -169,7 +169,7 @@ public class Connection: SQL.Connection {
             let values = UnsafeMutablePointer<UnsafePointer<Int8>>(allocatingCapacity: components.values.count)
             
             defer {
-                values.destroy()
+                values.deinitialize()
                 values.deallocateCapacity(components.values.count)
             }
             

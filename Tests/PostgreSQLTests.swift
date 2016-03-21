@@ -14,7 +14,7 @@ class PostgreSQLTests: XCTestCase {
     
     let connection = Connection(host: "localhost", databaseName: "swift_test")
     
-    let log = Log()
+    let log = Log(stream: standardErrorStream)
     
     override func setUp() {
         super.setUp()

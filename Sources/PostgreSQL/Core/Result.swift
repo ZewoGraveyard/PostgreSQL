@@ -88,7 +88,7 @@ public class Result: SQL.Result {
         }
     }
 
-    internal init(_ resultPointer: COpaquePointer) throws {
+    internal init(_ resultPointer: OpaquePointer) throws {
         self.resultPointer = resultPointer
         
         guard status.successful else {
@@ -139,7 +139,7 @@ public class Result: SQL.Result {
         return Status(status: PQresultStatus(resultPointer))
     }
     
-    private let resultPointer: COpaquePointer
+    private let resultPointer: OpaquePointer
     
     public func clear() {
         PQclear(resultPointer)
