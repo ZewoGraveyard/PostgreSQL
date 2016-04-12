@@ -162,3 +162,11 @@ public class Result: SQL.Result {
         
     }()
 }
+
+extension Data {
+    public init(pointer: UnsafePointer<Int8>, length: Int) {
+        var bytes: [UInt8] = [UInt8](repeating: 0, count: length)
+        memcpy(&bytes, pointer, length)
+        self.bytes = bytes
+    }
+}
