@@ -1,10 +1,10 @@
 PostgreSQL
 ==========
 
-[![Swift 2.2](https://img.shields.io/badge/Swift-2.2-orange.svg?style=flat)](https://swift.org)
-[![Platforms Linux](https://img.shields.io/badge/Platforms-Linux-lightgray.svg?style=flat)](https://swift.org/download/#linux)
-[![License MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat)](https://tldrlegal.com/license/mit-license)
-[![Slack Status](http://slack.zewo.io/badge.svg)](http://slack.zewo.io)
+[![Swift][swift-badge]][swift-url]
+[![Platform][platform-badge]][platform-url]
+[![License][mit-badge]][mit-url]
+[![Slack][slack-badge]][slack-url]
 
 **PostgreSQL** adapter for **Swift 2.2**.
 
