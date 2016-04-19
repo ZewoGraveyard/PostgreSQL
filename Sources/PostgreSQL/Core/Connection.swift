@@ -95,7 +95,7 @@ public class Connection: SQL.Connection {
     
     private(set) public var connectionInfo: Info
     
-    private var connection: OpaquePointer = nil
+    private var connection: OpaquePointer? = nil
     
     public var status: Status {
         return Status(status: PQstatus(self.connection))
@@ -142,19 +142,19 @@ public class Connection: SQL.Connection {
         connection = nil
     }
     
-    public func createSavePointNamed(name: String) throws {
+    public func createSavePointNamed(_ name: String) throws {
         try execute("SAVEPOINT \(name)")
     }
     
-    public func rollbackToSavePointNamed(name: String) throws {
+    public func rollbackToSavePointNamed(_ name: String) throws {
         try execute("ROLLBACK TO SAVEPOINT \(name)")
     }
     
-    public func releaseSavePointNamed(name: String) throws {
+    public func releaseSavePointNamed(_ name: String) throws {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func execute(components: QueryComponents) throws -> Result {
+    public func execute(_ components: QueryComponents) throws -> Result {
         
         defer {
             log?.debug(components.description)
@@ -166,7 +166,7 @@ public class Connection: SQL.Connection {
             result = PQexec(connection, components.string)
         }
         else {
-            let values = UnsafeMutablePointer<UnsafePointer<Int8>>(allocatingCapacity: components.values.count)
+            let values = UnsafeMutablePointer<UnsafePointer<Int8>?>(allocatingCapacity: components.values.count)
             
             defer {
                 values.deinitialize()
