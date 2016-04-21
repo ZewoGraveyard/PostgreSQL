@@ -24,7 +24,7 @@
 
 @_exported import SQL
 
-public struct FieldInfo: SQL.FieldInfo {
+public struct FieldInfo: SQL.FieldInfoProtocol {
     public var name: String
     
     init(name: String) {

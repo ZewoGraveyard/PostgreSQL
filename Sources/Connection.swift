@@ -24,15 +24,15 @@
 
 
 @_exported import SQL
-import Venice
 import CLibpq
 
-public class Connection: SQL.Connection {
+public final class Connection: ConnectionProtocol {
+    
     public struct Error: ErrorProtocol {
         public let description: String
     }
     
-    public struct Info: ConnectionInfo {
+    public struct ConnectionInfo: ConnectionInfoProtocol {
         public var host: String
         public var port: Int
         public var databaseName: String
@@ -40,10 +40,24 @@ public class Connection: SQL.Connection {
         public var password: String?
         public var options: String?
         public var tty: String?
+        
+        public init(_ uri: URI) throws {
+            
+            guard let host = uri.host, port = uri.port, databaseName = uri.path?.trim(["/"]) else {
+                throw Error(description: "Failed to extract host, port, database name from URI")
+            }
+            
+            self.host = host
+            self.port = port
+            self.databaseName = databaseName
+            self.username = uri.userInfo?.username
+            self.password = uri.userInfo?.password
+
+        }
     }
     
     
-    public enum Status {
+    public enum InternalStatus {
         case Bad
         case Started
         case Made
@@ -89,28 +103,25 @@ public class Connection: SQL.Connection {
                 break
             }
         }
+        
     }
     
-    public var log: Log? = nil
-    
-    private(set) public var connectionInfo: Info
+    public var logger: Logger?
     
     private var connection: OpaquePointer? = nil
     
-    public var status: Status {
-        return Status(status: PQstatus(self.connection))
-    }
+    public let connectionInfo: ConnectionInfo
     
-    public convenience init(host: String, port: Int = 5432, databaseName: String, username: String? = nil, password: String? = nil, options: String? = nil, tty: String? = nil) {
-        self.init(Info(host: host, port: port, databaseName: databaseName, username: username, password: password, options: options, tty: tty))
-    }
-    
-    public required init(_ info: Info) {
+    public required init(_ info: ConnectionInfo) {
         self.connectionInfo = info
     }
     
     deinit {
         close()
+    }
+    
+    public var internalStatus: InternalStatus {
+        return InternalStatus(status: PQstatus(self.connection))
     }
     
     public func open() throws {
@@ -154,11 +165,22 @@ public class Connection: SQL.Connection {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
+    public func executeInsertQuery<T: SQLDataConvertible>(query: InsertQuery, returningPrimaryKeyForField primaryKey: DeclaredField) throws -> T {
+        var components = query.queryComponents
+        components.append(QueryComponents(strings: ["RETURNING", primaryKey.qualifiedName, "AS", "returned__pk"]))
+        
+        let result = try execute(components)
+        
+        guard let pk: T = try result.first?.value("returned__pk") else {
+            throw Error(description: "Did not receive returned primary key")
+        }
+        
+        return pk
+    }
+    
     public func execute(_ components: QueryComponents) throws -> Result {
         
-        defer {
-            log?.debug(components.description)
-        }
+        defer { logger?.debug(components.description) }
         
         let result: OpaquePointer
         
@@ -195,7 +217,10 @@ public class Connection: SQL.Connection {
             
             result = PQexecParams(
                 self.connection,
-                try components.stringWithNumberedValuesUsingPrefix("$"),
+                try components.stringWithEscapedValuesUsingPrefix("$") {
+                    index, _ in
+                    return String(index + 1)
+                },
                 Int32(components.values.count),
                 nil,
                 values,

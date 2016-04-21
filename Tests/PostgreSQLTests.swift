@@ -10,15 +10,39 @@ import XCTest
 @testable import PostgreSQL
 
 
+public final class StandardOutputAppender: Appender {
+    public var name: String = "Standard Output Appender"
+    public var closed: Bool = false
+    public var level: Log.Level = .all
+    
+    public init () {}
+    
+    public func append(_ event: LoggingEvent) {
+        var logMessage = "\(event.message) \n"
+        let file = event.locationInfo.file
+        logMessage += "In File: \(file)"
+        logMessage += "\n"
+        let line = event.locationInfo.line
+        logMessage += "Line: \(line)"
+        logMessage += "\n"
+        let function = event.locationInfo.function
+        logMessage += "Called From: \(function)"
+        logMessage += "\n"
+        print(logMessage)
+    }
+}
+
 class PostgreSQLTests: XCTestCase {
     
-    let connection = Connection(host: "localhost", databaseName: "swift_test")
+    let connection = PostgreSQL.Connection("postgres://localhost:5432/swift_test")
     
-    let log = Log(stream: standardErrorStream)
+
+    let logger = Logger(name: "SQL Logger", appenders: [StandardOutputAppender()])
+
     
     override func setUp() {
         super.setUp()
-        connection.log = log
+        
         
         do {
             try connection.open()
@@ -26,6 +50,8 @@ class PostgreSQLTests: XCTestCase {
             try connection.execute("DROP TABLE IF EXISTS artists")
             try connection.execute("CREATE TABLE IF NOT EXISTS artists(id SERIAL PRIMARY KEY, genre VARCHAR(50), name VARCHAR(255))")
             try connection.execute("CREATE TABLE IF NOT EXISTS albums(id SERIAL PRIMARY KEY, name VARCHAR(255), artist_id int references artists(id))")
+            
+            connection.logger = logger
             
         }
         catch {
@@ -39,7 +65,7 @@ class PostgreSQLTests: XCTestCase {
             try Insert(["name": "Mike Snow"], into: "artists").execute(connection)
             
             for row in try connection.execute("SELECT * FROM artists") {
-                let name: String = try row.value("name")
+                let name: String? = try row.value("name")
                 let data = try row.data("name")
                 
                 print(name)
@@ -98,7 +124,8 @@ class PostgreSQLTests: XCTestCase {
             
             Artist.selectQuery.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
             
-            let newArtist = try Artist.create([.Name: "AC/DC", .Genre: "rock"], connection: connection)
+            var newArtist = Artist(name: "AC/DC", genre: "Rock")
+            try newArtist.create(connection)
             print(newArtist)
             
             var otherNewArtist = Artist(name: "Mötley Crue", genre: "glam rock")
@@ -110,7 +137,7 @@ class PostgreSQLTests: XCTestCase {
             
             var artist = try Artist.selectQuery.first(connection) ?? Artist(name: "Anonymous", genre: "alternative")
             artist.genre = "UDPATED2"
-            try artist.setNeedsSave(.Genre)
+            try artist.setNeedsSave(field: .Genre)
             try artist.save(connection)
             print(artist)
             

@@ -6,8 +6,7 @@
 //
 //
 
-import PostgreSQL
-
+import SQL
 
 struct Artist {
     let id: Int?
@@ -24,7 +23,7 @@ struct Artist {
 }
 
 extension Artist: Model {
-    enum Field: String, FieldType {
+    enum Field: String, FieldProtocol {
         case Id = "id"
         case Name = "name"
         case Genre = "genre"

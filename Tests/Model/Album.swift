@@ -6,7 +6,7 @@
 //
 //
 
-import PostgreSQL
+import SQL
 
 struct Album {
     struct Error: ErrorProtocol {
@@ -32,7 +32,7 @@ struct Album {
 
 
 extension Album: Model {
-    enum Field: String, FieldType {
+    enum Field: String, FieldProtocol {
         case Id = "id"
         case Name = "name"
         case ArtistId = "artist_id"

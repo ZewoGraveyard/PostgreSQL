@@ -26,7 +26,7 @@
 import CLibpq
 @_exported import SQL
 
-public class Result: SQL.Result {
+public class Result: SQL.ResultProtocol {
     
     public enum Error: ErrorProtocol {
         case BadStatus(Status, String)
