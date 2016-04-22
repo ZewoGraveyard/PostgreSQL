@@ -6,7 +6,7 @@ PostgreSQL
 [![License][mit-badge]][mit-url]
 [![Slack][slack-badge]][slack-url]
 
-**PostgreSQL** adapter for **Swift 2.2**.
+**PostgreSQL** adapter for **Swift 3.0**.
 
 ## Installation
 
