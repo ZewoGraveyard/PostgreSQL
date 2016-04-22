@@ -10,15 +10,13 @@ PostgreSQL
 
 ## Installation
 
-- Install libpq-dev
-
-### Linux
+- Linux
 
 ```bash
-$ (sudo) apt-get install libpq-dev
+$ apt-get install libpq-dev
 ```
 
-### OSX
+- OSX
 
 ```bash
 $ brew install postgresql
@@ -35,6 +33,18 @@ let package = Package(
 	]
 )
 
+```
+
+- Build on OSX
+
+```bash
+$ swift build -Xcc -I/usr/local/include -Xlinker -L/usr/local/lib/
+```
+
+- Build on Linux
+
+```bash
+$ swift build -Xcc -I/usr/include/postgresql
 ```
 
 ## Community
