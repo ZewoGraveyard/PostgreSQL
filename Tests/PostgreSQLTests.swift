@@ -34,7 +34,7 @@ public final class StandardOutputAppender: Appender {
 
 class PostgreSQLTests: XCTestCase {
     
-    let connection = PostgreSQL.Connection("postgres://localhost:5432/swift_test")
+    let connection = try! PostgreSQL.Connection(URI("postgres://localhost:5432/swift_test"))
     
 
     let logger = Logger(name: "SQL Logger", appenders: [StandardOutputAppender()])
