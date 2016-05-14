@@ -36,13 +36,16 @@ let package = Package(
 ```
 
 - Build on OSX
-
 ```bash
 $ swift build -Xcc -I/usr/local/include -Xlinker -L/usr/local/lib/
 ```
 
-- Build on Linux
+- Generate Xcode project
+```bash 
+$ swift build -Xcc -I/usr/local/include -Xlinker -L/usr/local/lib/ -Xswiftc -I/usr/local/include -X
+```
 
+- Build on Linux
 ```bash
 $ swift build -Xcc -I/usr/include/postgresql
 ```
