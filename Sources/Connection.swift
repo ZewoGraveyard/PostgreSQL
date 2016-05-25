@@ -175,11 +175,11 @@ public final class Connection: ConnectionProtocol {
     }
     
     public func composeStatement(_ select: Select) -> String {
-        var components = [SQLStringRepresentable]()
+        var components = [String]()
         
         components.append("SELECT")
         
-        var fieldComponents = [SQLStringRepresentable]()
+        var fieldComponents = [String]()
         
         for field in select.fields {
             switch field {
@@ -187,15 +187,17 @@ public final class Connection: ConnectionProtocol {
                 fieldComponents.append(string)
                 break
             case .subquery(let subquery, alias: let alias):
-                fieldComponents.append("\(composeStatement(subquery)) as \(alias)")
+                fieldComponents.append("(\(composeStatement(subquery))) as \(alias)")
+            case .field(let field):
+                fieldComponents.append(field.sqlString)
             }
         }
         
-        components.append(fieldComponents.sqlStringJoined(separator: ", "))
+        components.append(fieldComponents.joined(separator: ", "))
         components.append("FROM")
         
         
-        var sourceComponents = [SQLStringRepresentable]()
+        var sourceComponents = [String]()
         
         for source in select.from {
             switch source {
@@ -204,10 +206,12 @@ public final class Connection: ConnectionProtocol {
                 break
             case .subquery(let subquery, alias: let alias):
                 sourceComponents.append("\(composeStatement(subquery)) as \(alias)")
+            case .field(let field):
+                sourceComponents.append(field.sqlString)
             }
         }
         
-        components.append(sourceComponents.sqlStringJoined(separator: ", "))
+        components.append(sourceComponents.joined(separator: ", "))
         
         if !select.joins.isEmpty {
             components.append(select.joins.sqlStringJoined(separator: " "))
@@ -215,7 +219,7 @@ public final class Connection: ConnectionProtocol {
         
         if let predicate = select.predicate {
             components.append("WHERE")
-            components.append(predicate)
+            components.append(predicate.sqlString)
         }
         
         if !select.order.isEmpty {
@@ -230,7 +234,7 @@ public final class Connection: ConnectionProtocol {
             components.append("OFFSET \(offset)")
         }
         
-        return components.sqlStringJoined(separator: " ", isolate: true)
+        return components.joined(separator: " ")
     }
     
     public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {

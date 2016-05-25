@@ -75,6 +75,13 @@ class PostgreSQLTests: XCTestCase {
         do {
             try connection.execute(Select("id", "name", from: "artists"))
             
+            let subquery = Select(Artist.field(.Id), from: "users")
+            
+            let firstQuery = Select(subquery.subqueryNamed("u"), Artist.field(.Id), from: Artist.tableName).filter("id" == 2).first
+            
+            try connection.execute(firstQuery)
+            
+            
         }
         catch {
             XCTFail("\(error)")
