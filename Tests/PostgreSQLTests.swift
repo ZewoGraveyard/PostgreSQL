@@ -59,23 +59,7 @@ class PostgreSQLTests: XCTestCase {
         }
     }
     
-    func testGenerator() {
-        do {
-            try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
-            try Insert(["name": "Mike Snow"], into: "artists").execute(connection)
-            
-            for row in try connection.execute("SELECT * FROM artists") {
-                let name: String? = try row.value("name")
-                let data = try row.data("name")
-                
-                print(name)
-                print(data)
-            }
-        }
-        catch {
-            XCTFail("\(error)")
-        }
-    }
+    
     
     func testSimpleQueries() {
         do {
@@ -89,23 +73,8 @@ class PostgreSQLTests: XCTestCase {
     
     func testSimpleDSLQueries() {
         do {
-            try Select(["id", "name"], from: "artists").execute(connection)
-            try Select(from: "artists").execute(connection)
-            try Select(from: "artists").join("albums", using: .Inner, leftKey: "artists.id", rightKey: "albums.artist_id").execute(connection)
-            try Select(from: "artists").limit(10).offset(1).execute(connection)
-            try Select(from: "artists").orderBy(.Descending("name"), .Ascending("id")).execute(connection)
+            try connection.execute(Select("id", "name", from: "artists"))
             
-            try Insert([Artist.field(.Name): "Lady Gaga"], into: Artist.tableName).execute(connection)
-            
-            try Update(Artist.tableName, set: [Artist.field(.Name): "Mike Snow"]).execute(connection)
-            
-            try Delete(from: "albums").execute(connection)
-            
-            try Select(from: "artists").filter(field("genre") == "rock" && field("name").like("%rock") || field("name") == "AC/DC").execute(connection)
-            
-            try Update("artists", set: ["genre": "rock"]).filter(field("name") == "AC/DC").execute(connection)
-            
-            try Delete(from: "artists").filter(field("name") == "Skrillex").execute(connection)
         }
         catch {
             XCTFail("\(error)")
@@ -113,41 +82,7 @@ class PostgreSQLTests: XCTestCase {
     }
     
     
-    func testModelDSLQueries() {
-        
-        do {
-            try Artist.selectQuery.fetch(connection)
-            try Artist.get(1, connection: connection)
-            
-            try Artist.selectQuery.limit(10).offset(1).execute(connection)
-            try Artist.selectQuery.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
-            
-            Artist.selectQuery.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
-            
-            var newArtist = Artist(name: "AC/DC", genre: "Rock")
-            try newArtist.create(connection)
-            print(newArtist)
-            
-            var otherNewArtist = Artist(name: "Mötley Crue", genre: "glam rock")
-            try otherNewArtist.create(connection)
-            
-            print(otherNewArtist)
-            
-            Select([Artist.field(.Id)], from: Artist.tableName)
-            
-            var artist = try Artist.selectQuery.first(connection) ?? Artist(name: "Anonymous", genre: "alternative")
-            artist.genre = "UDPATED2"
-            try artist.setNeedsSave(field: .Genre)
-            try artist.save(connection)
-            print(artist)
-            
-            try artist.delete(connection)
-        }
-        catch {
-            XCTFail("\(error)")
-        }
-        
-    }
+    
     
     
     override func tearDown() {

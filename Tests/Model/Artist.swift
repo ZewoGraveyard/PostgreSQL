@@ -23,7 +23,7 @@ struct Artist {
 }
 
 extension Artist: Model {
-    enum Field: String, FieldProtocol {
+    enum Field: String {
         case Id = "id"
         case Name = "name"
         case Genre = "genre"
@@ -41,13 +41,6 @@ extension Artist: Model {
         id = try row.value(Artist.field(.Id))
         name = try row.value(Artist.field(.Name))
         genre = try row.value(Artist.field(.Genre))
-    }
-    
-    var persistedValuesByField: [Field: SQLDataConvertible?] {
-        return [
-            .Name: name,
-            .Genre: genre
-        ]
     }
     
     func willSave() {

@@ -32,7 +32,7 @@ struct Album {
 
 
 extension Album: Model {
-    enum Field: String, FieldProtocol {
+    enum Field: String {
         case Id = "id"
         case Name = "name"
         case ArtistId = "artist_id"
@@ -50,13 +50,6 @@ extension Album: Model {
         id = try row.value(Album.field(.Id))
         name = try row.value(Album.field(.Name))
         artistId = try row.value(Album.field(.ArtistId))
-    }
-    
-    var persistedValuesByField: [Field: SQLDataConvertible?] {
-        return [
-            .Name: name,
-            .ArtistId: artistId
-        ]
     }
 }
 

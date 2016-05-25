@@ -54,6 +54,15 @@ public final class Connection: ConnectionProtocol {
             self.password = uri.userInfo?.password
 
         }
+        
+        public init(host: String, port: Int = 5432, databaseName: String, password: String? = nil, options: String? = nil, tty: String? = nil) {
+            self.host = host
+            self.port = port
+            self.databaseName = databaseName
+            self.password = password
+            self.options = options
+            self.tty = tty
+        }
     }
     
     
@@ -165,70 +174,116 @@ public final class Connection: ConnectionProtocol {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func executeInsertQuery<T: SQLDataConvertible>(query: InsertQuery, returningPrimaryKeyForField primaryKey: DeclaredField) throws -> T {
-        var components = query.queryComponents
-        components.append(QueryComponents(strings: ["RETURNING", primaryKey.qualifiedName, "AS", "returned__pk"]))
+    public func composeStatement(_ select: Select) -> String {
+        var components = [SQLStringRepresentable]()
         
-        let result = try execute(components)
+        components.append("SELECT")
         
-        guard let pk: T = try result.first?.value("returned__pk") else {
-            throw Error(description: "Did not receive returned primary key")
+        var fieldComponents = [SQLStringRepresentable]()
+        
+        for field in select.fields {
+            switch field {
+            case .string(let string):
+                fieldComponents.append(string)
+                break
+            case .subquery(let subquery, alias: let alias):
+                fieldComponents.append("\(composeStatement(subquery)) as \(alias)")
+            }
         }
         
-        return pk
+        components.append(fieldComponents.sqlStringJoined(separator: ", "))
+        components.append("FROM")
+        
+        
+        var sourceComponents = [SQLStringRepresentable]()
+        
+        for source in select.from {
+            switch source {
+            case .string(let string):
+                sourceComponents.append(string)
+                break
+            case .subquery(let subquery, alias: let alias):
+                sourceComponents.append("\(composeStatement(subquery)) as \(alias)")
+            }
+        }
+        
+        components.append(sourceComponents.sqlStringJoined(separator: ", "))
+        
+        if !select.joins.isEmpty {
+            components.append(select.joins.sqlStringJoined(separator: " "))
+        }
+        
+        if let predicate = select.predicate {
+            components.append("WHERE")
+            components.append(predicate)
+        }
+        
+        if !select.order.isEmpty {
+            components.append(select.order.sqlStringJoined(separator: ", "))
+        }
+        
+        if let limit = select.limit {
+            components.append("LIMIT \(limit)")
+        }
+        
+        if let offset = select.offset {
+            components.append("OFFSET \(offset)")
+        }
+        
+        return components.sqlStringJoined(separator: " ", isolate: true)
     }
     
-    public func execute(_ components: QueryComponents) throws -> Result {
+    public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {
         
-        defer { logger?.debug(components.description) }
-        
-        let result: OpaquePointer
-        
-        if components.values.isEmpty {
-            result = PQexec(connection, components.string)
+        var statement = statement.sqlStringWithEscapedPlaceholdersUsingPrefix("$") {
+            return String($0 + 1)
         }
-        else {
-            let values = UnsafeMutablePointer<UnsafePointer<Int8>?>(allocatingCapacity: components.values.count)
+
+        defer { logger?.debug(statement) }
+        
+        guard let parameters = parameters where !parameters.isEmpty else {
+            return try Result(PQexec(connection, statement))
+        }
+        
+        let values = UnsafeMutablePointer<UnsafePointer<Int8>?>(allocatingCapacity: parameters.count)
+        
+        defer {
+            values.deinitialize()
+            values.deallocateCapacity(parameters.count)
+        }
+        
+        var temps = [Array<UInt8>]()
+        for (i, parameter) in parameters.enumerated() {
             
-            defer {
-                values.deinitialize()
-                values.deallocateCapacity(components.values.count)
+            guard let value = parameter else {
+                temps.append(Array<UInt8>("NULL".utf8) + [0])
+                values[i] = UnsafePointer<Int8>(temps.last!)
+                continue
             }
             
-            var temps = [Array<UInt8>]()
-            for (i, parameter) in components.values.enumerated() {
-                
-                guard let value = parameter else {
-                    temps.append(Array<UInt8>("NULL".utf8) + [0])
-                    values[i] = UnsafePointer<Int8>(temps.last!)
-                    continue
-                }
-                
-                switch value {
-                case .Binary(let data):
-                    values[i] = UnsafePointer<Int8>(Array(data))
-                    break
-                case .Text(let string):
-                    temps.append(Array<UInt8>(string.utf8) + [0])
-                    values[i] = UnsafePointer<Int8>(temps.last!)
-                    break
-                }
+            switch value {
+            case .data(let data):
+                values[i] = UnsafePointer<Int8>(Array(data))
+                break
+            case .string(let string):
+                temps.append(Array<UInt8>(string.utf8) + [0])
+                values[i] = UnsafePointer<Int8>(temps.last!)
+                break
             }
-            
-            result = PQexecParams(
-                self.connection,
-                try components.stringWithEscapedValuesUsingPrefix("$") {
-                    index, _ in
-                    return String(index + 1)
-                },
-                Int32(components.values.count),
-                nil,
-                values,
-                nil,
-                nil,
-                0
-            )
         }
+        
+        
+        
+        let result:OpaquePointer = PQexecParams(
+            self.connection,
+            statement,
+            Int32(parameters.count),
+            nil,
+            values,
+            nil,
+            nil,
+            0
+        )
         
         return try Result(result)
     }
