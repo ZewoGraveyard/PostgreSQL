@@ -73,11 +73,22 @@ class PostgreSQLTests: XCTestCase {
     
     func testSimpleDSLQueries() {
         do {
-            try connection.execute(Select("id", "name", from: "artists"))
             
-            let subquery = Select(Artist.field(.Id), from: "users")
             
-            let firstQuery = Select(subquery.subqueryNamed("u"), Artist.field(.Id), from: Artist.tableName).filter("id" == 2).first
+            
+            let firstQuery =
+                Album.select(.id, .name, .artistId)
+                .extend(
+                    sum(Album.field(.numberOfPlays), as: "numPlays"),
+                    Select("*", from: "genres").subquery(as: "genres")
+                    )
+                .join(.inner(Artist.tableName), on: Album.field(.artistId), equals: Artist.field(.id))
+                .filter(Artist.field(.name).containedIn("Josh Rouse", "AC/DC"))
+                .offset(10)
+                .first
+            
+            
+            
             
             try connection.execute(firstQuery)
             

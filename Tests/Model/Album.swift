@@ -33,23 +33,24 @@ struct Album {
 
 extension Album: Model {
     enum Field: String {
-        case Id = "id"
-        case Name = "name"
-        case ArtistId = "artist_id"
+        case id = "id"
+        case name = "name"
+        case artistId = "artist_id"
+        case numberOfPlays = "play_number"
     }
     
     static let tableName: String = "albums"
     
-    static let fieldForPrimaryKey: Field = .Id
+    static let fieldForPrimaryKey: Field = .id
 
     var primaryKey: Int? {
         return id
     }
     
     init(row: Row) throws {
-        id = try row.value(Album.field(.Id))
-        name = try row.value(Album.field(.Name))
-        artistId = try row.value(Album.field(.ArtistId))
+        id = try row.value(Album.field(.id))
+        name = try row.value(Album.field(.name))
+        artistId = try row.value(Album.field(.artistId))
     }
 }
 

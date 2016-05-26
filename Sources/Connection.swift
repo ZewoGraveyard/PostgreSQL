@@ -174,69 +174,6 @@ public final class Connection: ConnectionProtocol {
         try execute("RELEASE SAVEPOINT \(name)")
     }
     
-    public func composeStatement(_ select: Select) -> String {
-        var components = [String]()
-        
-        components.append("SELECT")
-        
-        var fieldComponents = [String]()
-        
-        for field in select.fields {
-            switch field {
-            case .string(let string):
-                fieldComponents.append(string)
-                break
-            case .subquery(let subquery, alias: let alias):
-                fieldComponents.append("(\(composeStatement(subquery))) as \(alias)")
-            case .field(let field):
-                fieldComponents.append(field.sqlString)
-            }
-        }
-        
-        components.append(fieldComponents.joined(separator: ", "))
-        components.append("FROM")
-        
-        
-        var sourceComponents = [String]()
-        
-        for source in select.from {
-            switch source {
-            case .string(let string):
-                sourceComponents.append(string)
-                break
-            case .subquery(let subquery, alias: let alias):
-                sourceComponents.append("\(composeStatement(subquery)) as \(alias)")
-            case .field(let field):
-                sourceComponents.append(field.sqlString)
-            }
-        }
-        
-        components.append(sourceComponents.joined(separator: ", "))
-        
-        if !select.joins.isEmpty {
-            components.append(select.joins.sqlStringJoined(separator: " "))
-        }
-        
-        if let predicate = select.predicate {
-            components.append("WHERE")
-            components.append(predicate.sqlString)
-        }
-        
-        if !select.order.isEmpty {
-            components.append(select.order.sqlStringJoined(separator: ", "))
-        }
-        
-        if let limit = select.limit {
-            components.append("LIMIT \(limit)")
-        }
-        
-        if let offset = select.offset {
-            components.append("OFFSET \(offset)")
-        }
-        
-        return components.joined(separator: " ")
-    }
-    
     public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {
         
         var statement = statement.sqlStringWithEscapedPlaceholdersUsingPrefix("$") {
@@ -290,5 +227,82 @@ public final class Connection: ConnectionProtocol {
         )
         
         return try Result(result)
+    }
+}
+
+extension Connection {
+    public struct Composer: QueryComposer {
+        public static func composeStatement(_ select: Select) -> String {
+            var components = [String]()
+            
+            components.append("SELECT")
+            
+            var fieldComponents = [String]()
+            
+            for field in select.fields {
+                switch field {
+                case .string(let string):
+                    fieldComponents.append(string)
+                    break
+                case .subquery(let subquery, alias: let alias):
+                    fieldComponents.append("(\(composeStatement(subquery))) as \(alias)")
+                    break
+                case .field(let field):
+                    fieldComponents.append(field.sqlString)
+                    break
+                case .function(let function, let alias):
+                    fieldComponents.append("\(function.sqlString) as \(alias)")
+                    break
+                }
+            }
+            
+            components.append(fieldComponents.joined(separator: ", "))
+            components.append("FROM")
+            
+            
+            var sourceComponents = [String]()
+            
+            for source in select.from {
+                switch source {
+                case .string(let string):
+                    sourceComponents.append(string)
+                    break
+                case .subquery(let subquery, alias: let alias):
+                    sourceComponents.append("\(composeStatement(subquery)) as \(alias)")
+                    break
+                case .field(let field):
+                    sourceComponents.append(field.sqlString)
+                    break
+                case .function(let function, let alias):
+                    fieldComponents.append("\(function.sqlString) as \(alias)")
+                    break
+                }
+            }
+            
+            components.append(sourceComponents.joined(separator: ", "))
+            
+            if !select.joins.isEmpty {
+                components.append(select.joins.sqlStringJoined(separator: " "))
+            }
+            
+            if let predicate = select.predicate {
+                components.append("WHERE")
+                components.append(composePredicate(predicate))
+            }
+            
+            if !select.order.isEmpty {
+                components.append(select.order.sqlStringJoined(separator: ", "))
+            }
+            
+            if let limit = select.limit {
+                components.append("LIMIT \(limit)")
+            }
+            
+            if let offset = select.offset {
+                components.append("OFFSET \(offset)")
+            }
+            
+            return components.joined(separator: " ")
+        }
     }
 }

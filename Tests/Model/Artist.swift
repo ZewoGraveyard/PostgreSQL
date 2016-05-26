@@ -24,13 +24,13 @@ struct Artist {
 
 extension Artist: Model {
     enum Field: String {
-        case Id = "id"
-        case Name = "name"
-        case Genre = "genre"
+        case id = "id"
+        case name = "name"
+        case genre = "genre"
     }
     
     static let tableName: String = "artists"
-   	static let fieldForPrimaryKey: Field = .Id
+   	static let fieldForPrimaryKey: Field = .id
 
     
     var primaryKey: Int? {
@@ -38,9 +38,9 @@ extension Artist: Model {
     }
 
     init(row: Row) throws {
-        id = try row.value(Artist.field(.Id))
-        name = try row.value(Artist.field(.Name))
-        genre = try row.value(Artist.field(.Genre))
+        id = try row.value(Artist.field(.id))
+        name = try row.value(Artist.field(.name))
+        genre = try row.value(Artist.field(.genre))
     }
     
     func willSave() {
