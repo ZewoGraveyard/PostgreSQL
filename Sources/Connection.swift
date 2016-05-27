@@ -232,14 +232,14 @@ public final class Connection: ConnectionProtocol {
 
 extension Connection {
     public struct Composer: QueryComposer {
-        public static func composeStatement(_ select: Select) -> String {
+        public static func composeStatement(_ statement: Select) -> String {
             var components = [String]()
             
             components.append("SELECT")
             
             var fieldComponents = [String]()
             
-            for field in select.fields {
+            for field in statement.fields {
                 switch field {
                 case .string(let string):
                     fieldComponents.append(string)
@@ -248,7 +248,7 @@ extension Connection {
                     fieldComponents.append("(\(composeStatement(subquery))) as \(alias)")
                     break
                 case .field(let field):
-                    fieldComponents.append(field.sqlString)
+                    fieldComponents.append(field.qualifiedName)
                     break
                 case .function(let function, let alias):
                     fieldComponents.append("\(function.sqlString) as \(alias)")
@@ -262,7 +262,7 @@ extension Connection {
             
             var sourceComponents = [String]()
             
-            for source in select.from {
+            for source in statement.from {
                 switch source {
                 case .string(let string):
                     sourceComponents.append(string)
@@ -271,7 +271,7 @@ extension Connection {
                     sourceComponents.append("\(composeStatement(subquery)) as \(alias)")
                     break
                 case .field(let field):
-                    sourceComponents.append(field.sqlString)
+                    sourceComponents.append(field.qualifiedName)
                     break
                 case .function(let function, let alias):
                     fieldComponents.append("\(function.sqlString) as \(alias)")
@@ -281,28 +281,68 @@ extension Connection {
             
             components.append(sourceComponents.joined(separator: ", "))
             
-            if !select.joins.isEmpty {
-                components.append(select.joins.sqlStringJoined(separator: " "))
+            if !statement.joins.isEmpty {
+                components.append(statement.joins.sqlStringJoined(separator: " "))
             }
             
-            if let predicate = select.predicate {
+            if let predicate = statement.predicate {
                 components.append("WHERE")
                 components.append(composePredicate(predicate))
             }
             
-            if !select.order.isEmpty {
-                components.append(select.order.sqlStringJoined(separator: ", "))
+            if !statement.order.isEmpty {
+                components.append(statement.order.sqlStringJoined(separator: ", "))
             }
             
-            if let limit = select.limit {
+            if let limit = statement.limit {
                 components.append("LIMIT \(limit)")
             }
             
-            if let offset = select.offset {
+            if let offset = statement.offset {
                 components.append("OFFSET \(offset)")
             }
             
             return components.joined(separator: " ")
         }
+        
+        public static func composeStatement(_ statement: Update) -> String {
+            var components = ["UPDATE", statement.tableName, "SET"]
+            
+            
+            components.append(
+                statement.valuesByField.map {
+                    return "\($0.key.unqualifiedName) = %@"
+                    }.joined(separator: ", ")
+            )
+
+            if let predicate = statement.predicate {
+                components.append("WHERE")
+                components.append(composePredicate(predicate))
+            }
+            
+            return components.joined(separator: " ")
+        }
+        
+        public static func composeStatement(_ statement: Insert) -> String {
+            var components = ["INSERT INTO", statement.tableName]
+            
+            components.append(
+                "(\(statement.valuesByField.keys.map { $0.unqualifiedName }.joined(separator: ", ")))"
+            )
+
+            components.append("VALUES")
+            
+            components.append(
+                "(\(statement.valuesByField.values.map { _ in "%@" }.joined(separator: ", ")))"
+            )
+            
+            if let returning = statement.returning {
+                components.append("RETURNING")
+                components.append(returning.map { $0.unqualifiedName }.joined(separator: ", "))
+            }
+            
+            return components.joined(separator: " ")
+        }
+        
     }
 }

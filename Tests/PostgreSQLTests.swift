@@ -32,6 +32,106 @@ public final class StandardOutputAppender: Appender {
     }
 }
 
+// MARK: - Models
+
+final class Artist {
+    var id: Int?
+    var name: String
+    var genre: String?
+
+    init(name: String, genre: String) {
+        self.id = nil
+        self.name = name
+        self.genre = genre
+    }
+}
+
+extension Artist: Model {
+    enum Field: String {
+        case id = "id"
+        case name = "name"
+        case genre = "genre"
+    }
+    
+    static let tableName: String = "artists"
+   	static let primaryKeyField: Field = .id
+    
+    
+    var primaryKey: Int? {
+        get {
+            return id
+        }
+        set {
+            id = newValue
+        }
+    }
+    
+    var persistedValuesByField: [Field: ValueConvertible?] {
+        return [
+                   .name: name,
+                    .genre: genre
+        ]
+    }
+    
+    convenience init(row: Row) throws {
+        try self.init(
+            name: row.value(Artist.field(.name)),
+            genre: row.value(Artist.field(.genre))
+        )
+        id = try row.value(Artist.field(.id))
+    }
+}
+
+final class Album {
+    var id: Int?
+    var name: String
+    var artistId: Artist.PrimaryKey
+    
+    init(name: String, artistId: Artist.PrimaryKey) {
+        self.id = nil
+        self.name = name
+        self.artistId = artistId
+    }
+}
+
+extension Album: Model {
+    enum Field: String {
+        case id = "id"
+        case name = "name"
+        case artistId = "artist_id"
+    }
+    
+    static let tableName: String = "artists"
+   	static let primaryKeyField: Field = .id
+    
+    
+    var primaryKey: Int? {
+        get {
+            return id
+        }
+        set {
+            id = newValue
+        }
+    }
+    
+    var persistedValuesByField: [Field: ValueConvertible?] {
+        return [
+                   .name: name,
+                   .artistId: artistId
+        ]
+    }
+    
+    convenience init(row: Row) throws {
+        try self.init(
+            name: row.value(Album.field(.name)),
+            artistId: row.value(Album.field(.artistId))
+        )
+        id = try row.value(Album.field(.id))
+    }
+}
+
+// MARK: - Tests
+
 class PostgreSQLTests: XCTestCase {
     
     let connection = try! PostgreSQL.Connection(URI("postgres://localhost:5432/swift_test"))
@@ -43,13 +143,14 @@ class PostgreSQLTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        
         do {
             try connection.open()
             try connection.execute("DROP TABLE IF EXISTS albums")
             try connection.execute("DROP TABLE IF EXISTS artists")
             try connection.execute("CREATE TABLE IF NOT EXISTS artists(id SERIAL PRIMARY KEY, genre VARCHAR(50), name VARCHAR(255))")
             try connection.execute("CREATE TABLE IF NOT EXISTS albums(id SERIAL PRIMARY KEY, name VARCHAR(255), artist_id int references artists(id))")
+            
+            try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
             
             connection.logger = logger
             
@@ -59,47 +160,54 @@ class PostgreSQLTests: XCTestCase {
         }
     }
     
-    
-    
-    func testSimpleQueries() {
-        do {
-            try connection.execute("SELECT * FROM artists")
-            try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
-        }
-        catch {
-            XCTFail("\(error)")
-        }
-    }
-    
-    func testSimpleDSLQueries() {
-        do {
-            
-            
-            
-            let firstQuery =
-                Album.select(.id, .name, .artistId)
-                .extend(
-                    sum(Album.field(.numberOfPlays), as: "numPlays"),
-                    Select("*", from: "genres").subquery(as: "genres")
-                    )
-                .join(.inner(Artist.tableName), on: Album.field(.artistId), equals: Artist.field(.id))
-                .filter(Artist.field(.name).containedIn("Josh Rouse", "AC/DC"))
-                .offset(10)
-                .first
-            
-            
-            
-            
-            try connection.execute(firstQuery)
-            
-            
-        }
-        catch {
-            XCTFail("\(error)")
-        }
+    func testSimpleRawQueries() throws {
+        try connection.execute("SELECT * FROM artists")
+        let result = try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
+
+        XCTAssert(try result.first?.value("name") == "Josh Rouse")
     }
     
     
+    func testSelect() throws {
+        let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
+        
+        let result = try connection.execute(selectQuery)
+        
+        XCTAssert(try result.first?.value(Artist.field(.name)) == "Josh Rouse")
+    }
+    
+    func testUpdate() {
+        do {
+            let query = Artist.update([.name: "AC/DC"]).filter(Artist.field(.genre) == "Rock")
+            
+            try connection.execute(query)
+        }
+        catch {
+            XCTFail("Update error: \(error)")
+        }
+    }
+    
+    func testModelInsert() {
+        do {
+            let artist = Artist(name: "The Darkness", genre: "Rock")
+            try artist.save(in: connection)
+            
+            artist.name = "Hello"
+            try artist.save(in: connection)
+            
+            guard let artistId = artist.id else {
+                XCTFail("Failed to set id")
+                return
+            }
+            
+            print(try Artist.get(artistId, in: connection)?.name)
+            print("OK")
+            
+        }
+        catch {
+            XCTFail("Model insert error: \(error)")
+        }
+    }
     
     
     
