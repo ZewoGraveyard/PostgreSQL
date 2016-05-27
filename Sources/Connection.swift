@@ -344,5 +344,15 @@ extension Connection {
             return components.joined(separator: " ")
         }
         
+        public static func composeStatement(_ statement: Delete) -> String {
+            var components = ["DELETE FROM", statement.tableName]
+            
+            if let predicate = statement.predicate {
+                components.append("WHERE")
+                components.append(composePredicate(predicate))
+            }
+            
+            return components.joined(separator: " ")
+        }
     }
 }

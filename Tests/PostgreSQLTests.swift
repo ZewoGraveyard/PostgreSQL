@@ -54,9 +54,8 @@ extension Artist: Model {
     }
     
     static let tableName: String = "artists"
-   	static let primaryKeyField: Field = .id
-    
-    
+   	static var primaryKeyField: Field = .id
+
     var primaryKey: Int? {
         get {
             return id
@@ -66,11 +65,8 @@ extension Artist: Model {
         }
     }
     
-    var persistedValuesByField: [Field: ValueConvertible?] {
-        return [
-                   .name: name,
-                    .genre: genre
-        ]
+    var serialize: [Field: ValueConvertible?] {
+        return [.name: name, .genre: genre]
     }
     
     convenience init(row: Row) throws {
@@ -114,11 +110,8 @@ extension Album: Model {
         }
     }
     
-    var persistedValuesByField: [Field: ValueConvertible?] {
-        return [
-                   .name: name,
-                   .artistId: artistId
-        ]
+    var serialize: [Field: ValueConvertible?] {
+        return [ .name: name, .artistId: artistId ]
     }
     
     convenience init(row: Row) throws {
@@ -127,7 +120,7 @@ extension Album: Model {
             artistId: row.value(Album.field(.artistId))
         )
         id = try row.value(Album.field(.id))
-    }
+    }    
 }
 
 // MARK: - Tests
@@ -153,6 +146,7 @@ class PostgreSQLTests: XCTestCase {
             try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
             
             connection.logger = logger
+
             
         }
         catch {
@@ -187,28 +181,33 @@ class PostgreSQLTests: XCTestCase {
         }
     }
     
-    func testModelInsert() {
-        do {
-            let artist = Artist(name: "The Darkness", genre: "Rock")
-            try artist.save(in: connection)
-            
-            artist.name = "Hello"
-            try artist.save(in: connection)
-            
-            guard let artistId = artist.id else {
-                XCTFail("Failed to set id")
-                return
-            }
-            
-            print(try Artist.get(artistId, in: connection)?.name)
-            print("OK")
-            
+    func testModelInsert() throws {
+        let artist = Artist(name: "The Darkness", genre: "Rock")
+        try artist.save(in: connection)
+        
+        artist.name = "The Darkness 2"
+        try artist.save(in: connection)
+        
+        guard let artistId = artist.id else {
+            XCTFail("Failed to set id")
+            return
         }
-        catch {
-            XCTFail("Model insert error: \(error)")
-        }
+        
+        XCTAssert(try Artist.get(artistId, in: connection)?.name == "The Darkness 2")
     }
     
+    
+    func testEquality() throws {
+        let artist = try Artist(name: "Mew", genre: "Alternative").save(in: connection)
+        
+        guard let id = artist.id else {
+            return XCTFail("Create failed")
+        }
+        
+        let same = try Artist.get(id, in: connection)
+        
+        XCTAssert(same == artist)
+    }
     
     
     override func tearDown() {
