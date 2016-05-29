@@ -162,13 +162,13 @@ class PostgreSQLTests: XCTestCase {
     }
     
     func testRockArtists() throws {
-        let rockArtists = try Artist.fetch(where: Artist.field(.genre) == "Rock", in: connection)
+        let rockArtists = try Artist.fetch(where: Artist.field(.genre) == "Rock", connection: connection)
         
         try connection.begin()
         
         for artist in rockArtists {
             artist.genre = "Rock 'n Roll"
-            try artist.save(in: connection)
+            try artist.save(connection: connection)
         }
         
         try connection.commit()
@@ -178,7 +178,7 @@ class PostgreSQLTests: XCTestCase {
         let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
         Artist.insert([.name: "AC/DC"])
         
-        try Artist.fetch(where: Artist.field(.genre) == "Rock", in: connection)
+        try Artist.fetch(where: Artist.field(.genre) == "Rock", connection: connection)
         
         let result = try connection.execute(selectQuery)
         
@@ -198,28 +198,28 @@ class PostgreSQLTests: XCTestCase {
     
     func testModelInsert() throws {
         let artist = Artist(name: "The Darkness", genre: "Rock")
-        try artist.save(in: connection)
+        try artist.save(connection: connection)
         
         artist.name = "The Darkness 2"
-        try artist.save(in: connection)
+        try artist.save(connection: connection)
         
         guard let artistId = artist.id else {
             XCTFail("Failed to set id")
             return
         }
         
-        XCTAssert(try Artist.get(artistId, in: connection)?.name == "The Darkness 2")
+        XCTAssert(try Artist.get(artistId, connection: connection)?.name == "The Darkness 2")
     }
     
     
     func testEquality() throws {
-        let artist = try Artist(name: "Mew", genre: "Alternative").save(in: connection)
+        let artist = try Artist(name: "Mew", genre: "Alternative").save(connection: connection)
         
         guard let id = artist.id else {
             return XCTFail("Create failed")
         }
         
-        let same = try Artist.get(id, in: connection)
+        let same = try Artist.get(id, connection: connection)
         
         XCTAssert(same == artist)
     }
