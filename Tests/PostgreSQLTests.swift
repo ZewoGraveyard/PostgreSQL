@@ -161,9 +161,24 @@ class PostgreSQLTests: XCTestCase {
         XCTAssert(try result.first?.value("name") == "Josh Rouse")
     }
     
+    func testRockArtists() throws {
+        let rockArtists = try Artist.fetch(where: Artist.field(.genre) == "Rock", in: connection)
+        
+        try connection.begin()
+        
+        for artist in rockArtists {
+            artist.genre = "Rock 'n Roll"
+            try artist.save(in: connection)
+        }
+        
+        try connection.commit()
+    }
     
     func testSelect() throws {
         let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
+        Artist.insert([.name: "AC/DC"])
+        
+        try Artist.fetch(where: Artist.field(.genre) == "Rock", in: connection)
         
         let result = try connection.execute(selectQuery)
         

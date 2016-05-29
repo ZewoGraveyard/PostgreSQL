@@ -197,7 +197,7 @@ public final class Connection: ConnectionProtocol {
         for (i, parameter) in parameters.enumerated() {
             
             guard let value = parameter else {
-                temps.append(Array<UInt8>("NULL".utf8) + [0])
+                temps.append([0])
                 values[i] = UnsafePointer<Int8>(temps.last!)
                 continue
             }
