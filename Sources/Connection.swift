@@ -181,37 +181,30 @@ public final class Connection: ConnectionProtocol {
 
         defer { logger?.debug(statement) }
         
-        guard let parameters = parameters where !parameters.isEmpty else {
+        guard let parameters = parameters else {
             return try Result(PQexec(connection, statement))
         }
         
-        let values = UnsafeMutablePointer<UnsafePointer<Int8>?>(allocatingCapacity: parameters.count)
+    
+        var parameterData = [[UInt8]?]()
         
-        defer {
-            values.deinitialize()
-            values.deallocateCapacity(parameters.count)
-        }
         
-        var temps = [Array<UInt8>]()
-        for (i, parameter) in parameters.enumerated() {
+        for parameter in parameters {
             
             guard let value = parameter else {
-                temps.append([0])
-                values[i] = UnsafePointer<Int8>(temps.last!)
+                parameterData.append(Array("hello".utf8) + [0])
                 continue
             }
             
             switch value {
             case .data(let data):
-                values[i] = UnsafePointer<Int8>(Array(data))
+                parameterData.append(Array(data))
                 break
             case .string(let string):
-                temps.append(Array<UInt8>(string.utf8) + [0])
-                values[i] = UnsafePointer<Int8>(temps.last!)
+                parameterData.append(Array(string.utf8) + [0])
                 break
             }
         }
-        
         
         
         let result:OpaquePointer = PQexecParams(
@@ -219,7 +212,7 @@ public final class Connection: ConnectionProtocol {
             statement,
             Int32(parameters.count),
             nil,
-            values,
+            parameterData.map { UnsafePointer<Int8>($0) },
             nil,
             nil,
             0
