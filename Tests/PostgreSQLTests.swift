@@ -169,7 +169,7 @@ class PostgreSQLTests: XCTestCase {
             
             try connection.begin()
             
-            for artist in rockArtists {
+            for var artist in rockArtists {
                 artist.genre = "Rock 'n Roll"
                 try artist.save(connection: connection)
             }
@@ -189,7 +189,7 @@ class PostgreSQLTests: XCTestCase {
             let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
             Artist.insert([.name: "AC/DC"])
             
-            try Artist.fetch(where: Artist.field(.genre) == "Rock", connection: connection)
+            try Artist.fetch(where: Artist.field(.genre) == Select("id", from: "users"), connection: connection)
             
             let result = try connection.execute(selectQuery)
             print(result.first)
@@ -215,8 +215,9 @@ class PostgreSQLTests: XCTestCase {
     
     func testModelInsert() throws {
         do {
-            let artist = Artist(name: "The Darkness", genre: "Rock")
+            var artist = Artist(name: "The Darkness", genre: "Rock")
             try artist.save(connection: connection)
+            
             
             artist.name = "The Darkness 2"
             try artist.save(connection: connection)
@@ -225,6 +226,8 @@ class PostgreSQLTests: XCTestCase {
                 XCTFail("Failed to set id")
                 return
             }
+            
+            
             
             XCTAssert(try Artist.get(artistId, connection: connection)?.name == "The Darkness 2")
         }
@@ -237,7 +240,8 @@ class PostgreSQLTests: XCTestCase {
     
     func testEquality() throws {
         do {
-            let artist = try Artist(name: "Mew", genre: "Alternative").save(connection: connection)
+            var artist = Artist(name: "Mew", genre: "Alternative")
+            try artist.save(connection: connection)
             
             guard let id = artist.id else {
                 return XCTFail("Create failed")
