@@ -126,8 +126,8 @@ class PostgreSQLTests: XCTestCase {
             
             try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
             
+            //connection.logger = logger
             
-            connection.logger = logger
             
         }
         catch {
@@ -144,14 +144,17 @@ class PostgreSQLTests: XCTestCase {
     
     func testBulk() {
         do {
-            
+            for i in 0..<300 {
+                var entity = Entity(model: Artist(name: "NAME \(i)", genre: "GENRE \(i)"))
+                try entity.save(connection: connection)
+            }
             
             measure {
                 do {
                     let result = try Entity<Artist>.fetchAll(connection: self.connection)
                     
                     for artist in result {
-                        
+                        print(artist.model.genre)
                     }
                 }
                 catch {

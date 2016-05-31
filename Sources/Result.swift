@@ -105,10 +105,13 @@ public class Result: SQL.ResultProtocol {
     }
     
     public func data(atRow rowIndex: Int, forFieldIndex fieldIndex: Int) -> Data? {
-        return Data(
-            pointer: PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex)),
-            length: Int(PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex)))
-        )
+        
+        let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex))
+        let count = PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex))
+        
+        let buffer = UnsafeBufferPointer<UInt8>(start: UnsafePointer<UInt8>(start), count: Int(count))
+        
+        return Data(Array(buffer))
     }
     
     public var count: Int {
@@ -147,12 +150,4 @@ public class Result: SQL.ResultProtocol {
         return result
         
     }()
-}
-
-extension Data {
-    public init(pointer: UnsafePointer<Int8>, length: Int) {
-        var bytes: [UInt8] = [UInt8](repeating: 0, count: length)
-        memcpy(&bytes, pointer, length)
-        self.bytes = bytes
-    }
 }
