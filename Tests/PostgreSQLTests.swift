@@ -79,12 +79,12 @@ extension Artist: Model {
 }
 
 final class Album {
-    var id: Int?
+    let id: Int
     var name: String
     var artistId: Artist.PrimaryKey
     
-    init(name: String, artistId: Artist.PrimaryKey) {
-        self.id = nil
+    init(id: Int, name: String, artistId: Artist.PrimaryKey) {
+        self.id = 100
         self.name = name
         self.artistId = artistId
     }
@@ -106,7 +106,7 @@ extension Album: Model {
             return id
         }
         set {
-            id = newValue
+            return
         }
     }
     
@@ -116,10 +116,11 @@ extension Album: Model {
     
     convenience init(row: Row) throws {
         try self.init(
+            id: try row.value(Album.field(.id)),
             name: row.value(Album.field(.name)),
             artistId: row.value(Album.field(.artistId))
         )
-        id = try row.value(Album.field(.id))
+        
     }    
 }
 
@@ -189,7 +190,7 @@ class PostgreSQLTests: XCTestCase {
             let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
             Artist.insert([.name: "AC/DC"])
             
-            try Artist.fetch(where: Artist.field(.genre) == Select("id", from: "users"), connection: connection)
+            try Artist.fetch(where: Artist.field(.genre) == "Rock", connection: connection)
             
             let result = try connection.execute(selectQuery)
             print(result.first)

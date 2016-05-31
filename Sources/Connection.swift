@@ -192,7 +192,7 @@ public final class Connection: ConnectionProtocol {
         for parameter in parameters {
             
             guard let value = parameter else {
-                parameterData.append(Array("hello".utf8) + [0])
+                parameterData.append(nil)
                 continue
             }
             
