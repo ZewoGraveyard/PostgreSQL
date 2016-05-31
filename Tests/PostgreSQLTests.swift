@@ -34,19 +34,19 @@ public final class StandardOutputAppender: Appender {
 
 // MARK: - Models
 
-final class Artist {
-    var id: Int?
+struct Artist {
     var name: String
-    var genre: String?
+    var genre: String
 
     init(name: String, genre: String) {
-        self.id = nil
         self.name = name
         self.genre = genre
     }
 }
 
-extension Artist: Model {
+extension Artist: ModelProtocol {
+    typealias PrimaryKey = Int
+    
     enum Field: String {
         case id = "id"
         case name = "name"
@@ -55,42 +55,33 @@ extension Artist: Model {
     
     static let tableName: String = "artists"
    	static var primaryKeyField: Field = .id
-
-    var primaryKey: Int? {
-        get {
-            return id
-        }
-        set {
-            id = newValue
-        }
-    }
+   
     
-    var serialize: [Field: ValueConvertible?] {
+    func serialize() -> [Field: ValueConvertible?] {
         return [.name: name, .genre: genre]
     }
     
-    convenience init(row: Row) throws {
+    init<T: RowProtocol>(row: T) throws {
         try self.init(
             name: row.value(Artist.field(.name)),
             genre: row.value(Artist.field(.genre))
         )
-        id = try row.value(Artist.field(.id))
     }
 }
 
 final class Album {
-    let id: Int
     var name: String
     var artistId: Artist.PrimaryKey
     
-    init(id: Int, name: String, artistId: Artist.PrimaryKey) {
-        self.id = 100
+    init(name: String, artistId: Artist.PrimaryKey) {
         self.name = name
         self.artistId = artistId
     }
 }
 
-extension Album: Model {
+extension Album: ModelProtocol {
+    typealias PrimaryKey = Int
+    
     enum Field: String {
         case id = "id"
         case name = "name"
@@ -100,23 +91,12 @@ extension Album: Model {
     static let tableName: String = "artists"
    	static let primaryKeyField: Field = .id
     
-    
-    var primaryKey: Int? {
-        get {
-            return id
-        }
-        set {
-            return
-        }
-    }
-    
-    var serialize: [Field: ValueConvertible?] {
+    func serialize() -> [Field: ValueConvertible?] {
         return [ .name: name, .artistId: artistId ]
     }
     
-    convenience init(row: Row) throws {
+    convenience init<T: RowProtocol>(row: T) throws {
         try self.init(
-            id: try row.value(Album.field(.id)),
             name: row.value(Album.field(.name)),
             artistId: row.value(Album.field(.artistId))
         )
@@ -146,8 +126,8 @@ class PostgreSQLTests: XCTestCase {
             
             try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
             
+            
             connection.logger = logger
-
             
         }
         catch {
@@ -162,16 +142,41 @@ class PostgreSQLTests: XCTestCase {
         XCTAssert(try result.first?.value("name") == "Josh Rouse")
     }
     
+    func testBulk() {
+        do {
+            
+            
+            measure {
+                do {
+                    let result = try Entity<Artist>.fetchAll(connection: self.connection)
+                    
+                    for artist in result {
+                        
+                    }
+                }
+                catch {
+                    XCTFail("\(error)")
+                }
+            }
+        }
+        catch {
+            print("ERROR")
+            XCTFail("\(error)")
+        }
+    }
+    
     func testRockArtists() throws {
         
 
         do {
-            let rockArtists = try Artist.fetch(where: Artist.field(.genre).isNull(), connection: connection)
+            let artists = try Entity<Artist>.fetchAll(connection: connection)
+            
+            try Entity<Artist>.fetchAll(connection: connection)
             
             try connection.begin()
             
-            for var artist in rockArtists {
-                artist.genre = "Rock 'n Roll"
+            for var artist in artists {
+                artist.model.genre = "Rock & Roll"
                 try artist.save(connection: connection)
             }
             
@@ -185,78 +190,6 @@ class PostgreSQLTests: XCTestCase {
         
     }
     
-    func testSelect() throws {
-        do {
-            let selectQuery = Artist.select().filter(Artist.field(.name) == "Josh Rouse").first
-            Artist.insert([.name: "AC/DC"])
-            
-            try Artist.fetch(where: Artist.field(.genre) == "Rock", connection: connection)
-            
-            let result = try connection.execute(selectQuery)
-            print(result.first)
-            
-            XCTAssert(try result.first?.value(Artist.field(.name)) == "Josh Rouse")
-        }
-        catch {
-            print(error)
-            throw error
-        }
-    }
-    
-    func testUpdate() {
-        do {
-            let query = Artist.update([.name: "AC/DC"]).filter(Artist.field(.genre) == "Rock")
-            
-            try connection.execute(query)
-        }
-        catch {
-            XCTFail("Update error: \(error)")
-        }
-    }
-    
-    func testModelInsert() throws {
-        do {
-            var artist = Artist(name: "The Darkness", genre: "Rock")
-            try artist.save(connection: connection)
-            
-            
-            artist.name = "The Darkness 2"
-            try artist.save(connection: connection)
-            
-            guard let artistId = artist.id else {
-                XCTFail("Failed to set id")
-                return
-            }
-            
-            
-            
-            XCTAssert(try Artist.get(artistId, connection: connection)?.name == "The Darkness 2")
-        }
-        catch {
-            print(error)
-            throw error
-        }
-    }
-    
-    
-    func testEquality() throws {
-        do {
-            var artist = Artist(name: "Mew", genre: "Alternative")
-            try artist.save(connection: connection)
-            
-            guard let id = artist.id else {
-                return XCTFail("Create failed")
-            }
-            
-            let same = try Artist.get(id, connection: connection)
-            
-            XCTAssert(same == artist)
-        }
-        catch {
-            print(error)
-            
-        }
-    }
     
     
     override func tearDown() {
@@ -267,5 +200,3 @@ class PostgreSQLTests: XCTestCase {
         
     }
 }
-
-

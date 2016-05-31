@@ -101,26 +101,14 @@ public class Result: SQL.ResultProtocol {
     }
     
     public subscript(position: Int) -> Row {
-        let index = Int32(position)
-        
-        var result: [String: Data?] = [:]
-        
-        for (fieldIndex, field) in fields.enumerated() {
-            let fieldIndex = Int32(fieldIndex)
-            
-            if PQgetisnull(resultPointer, index, fieldIndex) == 1 {
-                result[field.name] = nil
-            }
-            else {
-                
-                result[field.name] = Data(
-                    pointer: PQgetvalue(resultPointer, index, fieldIndex),
-                    length: Int(PQgetlength(resultPointer, index, fieldIndex))
-                )
-            }
-        }
-        
-        return Row(dataByfield: result)
+        return Row(result: self, index: position)
+    }
+    
+    public func data(atRow rowIndex: Int, forFieldIndex fieldIndex: Int) -> Data? {
+        return Data(
+            pointer: PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex)),
+            length: Int(PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex)))
+        )
     }
     
     public var count: Int {
@@ -145,17 +133,15 @@ public class Result: SQL.ResultProtocol {
         PQclear(resultPointer)
     }
     
-    public lazy var fields: [FieldInfo] = {
-        var result: [FieldInfo] = []
+    public lazy var fieldsByName: [String: FieldInfo] = {
+        var result = [String:FieldInfo]()
         
         for i in 0..<PQnfields(self.resultPointer) {
             guard let fieldName = String(validatingUTF8: PQfname(self.resultPointer, i)) else {
                 continue
             }
             
-            result.append(
-                FieldInfo(name: fieldName)
-            )
+            result[fieldName] = FieldInfo(name: fieldName, index: Int(i))
         }
         
         return result
