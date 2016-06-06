@@ -126,7 +126,7 @@ class PostgreSQLTests: XCTestCase {
             
             try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
             
-            //connection.logger = logger
+            connection.logger = logger
             
             
         }

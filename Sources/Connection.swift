@@ -27,6 +27,8 @@
 import CLibpq
 
 public final class Connection: ConnectionProtocol {
+    public typealias QueryRenderer = PostgreSQL.QueryRenderer
+    
     public struct Error: ErrorProtocol {
         public let description: String
     }
@@ -182,13 +184,15 @@ public final class Connection: ConnectionProtocol {
         defer { logger?.debug(statement) }
         
         guard let parameters = parameters else {
-            return try Result(PQexec(connection, statement))
+            guard let resultPointer = PQexec(connection, statement) else {
+                throw mostRecentError ?? Error(description: "Empty result")
+            }
+            
+            return try Result(resultPointer)
         }
         
-    
         var parameterData = [[UInt8]?]()
-        
-        
+
         for parameter in parameters {
             
             guard let value = parameter else {
@@ -207,7 +211,7 @@ public final class Connection: ConnectionProtocol {
         }
         
         
-        let result:OpaquePointer = PQexecParams(
+        guard let result:OpaquePointer = PQexecParams(
             self.connection,
             statement,
             Int32(parameters.count),
@@ -216,7 +220,9 @@ public final class Connection: ConnectionProtocol {
             nil,
             nil,
             0
-        )
+            ) else {
+                throw mostRecentError ?? Error(description: "Empty result")
+        }
         
         return try Result(result)
     }
