@@ -29,7 +29,7 @@ import CLibpq
 public final class Connection: ConnectionProtocol {
     public typealias QueryRenderer = PostgreSQL.QueryRenderer
     
-    public struct Error: ErrorProtocol {
+    public struct Error: ErrorProtocol, CustomStringConvertible {
         public let description: String
     }
     
