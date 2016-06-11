@@ -144,9 +144,6 @@ public class Result: SQL.ResultProtocol {
                 continue
             }
             
-            let ok = PQftype(self.resultPointer, i)
-            print(ok)
-            
             result[fieldName] = FieldInfo(name: fieldName, index: Int(i))
         }
         
