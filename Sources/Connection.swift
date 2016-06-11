@@ -55,7 +55,6 @@ public final class Connection: ConnectionProtocol {
             self.password = uri.userInfo?.password
 
         }
-        
         public init(host: String, port: Int = 5432, databaseName: String, password: String? = nil, options: String? = nil, tty: String? = nil) {
             self.host = host
             self.port = port
