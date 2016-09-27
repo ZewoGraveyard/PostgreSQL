@@ -106,7 +106,7 @@ extension Album: ModelProtocol {
 
 // MARK: - Tests
 
-class PostgreSQLTests: XCTestCase {
+public class PostgreSQLTests: XCTestCase {
     
     let connection = try! PostgreSQL.Connection(URI("postgres://localhost:5432/swift_test"))
     
