@@ -32,6 +32,80 @@ public final class StandardOutputAppender: Appender {
     }
 }
 
+// MARK: - Models
+
+struct Artist {
+    var name: String
+    var genre: String
+
+    init(name: String, genre: String) {
+        self.name = name
+        self.genre = genre
+    }
+}
+
+extension Artist: ModelProtocol {
+    typealias PrimaryKey = Int
+    
+    enum Field: String {
+        case id = "id"
+        case name = "name"
+        case genre = "genre"
+    }
+    
+    static let tableName: String = "artists"
+   	static var primaryKeyField: Field = .id
+   
+    
+    func serialize() -> [Field: ValueConvertible?] {
+        return [.name: name, .genre: genre]
+    }
+    
+    init<T: RowProtocol>(row: T) throws {
+        try self.init(
+            name: row.value(Artist.field(.name)),
+            genre: row.value(Artist.field(.genre))
+        )
+    }
+}
+
+final class Album {
+    var name: String
+    var artistId: Artist.PrimaryKey
+    
+    init(name: String, artistId: Artist.PrimaryKey) {
+        self.name = name
+        self.artistId = artistId
+    }
+}
+
+extension Album: ModelProtocol {
+    typealias PrimaryKey = Int
+    
+    enum Field: String {
+        case id = "id"
+        case name = "name"
+        case artistId = "artist_id"
+    }
+    
+    static let tableName: String = "artists"
+   	static let primaryKeyField: Field = .id
+    
+    func serialize() -> [Field: ValueConvertible?] {
+        return [ .name: name, .artistId: artistId ]
+    }
+    
+    convenience init<T: RowProtocol>(row: T) throws {
+        try self.init(
+            name: row.value(Album.field(.name)),
+            artistId: row.value(Album.field(.artistId))
+        )
+        
+    }    
+}
+
+// MARK: - Tests
+
 class PostgreSQLTests: XCTestCase {
     
     let connection = try! PostgreSQL.Connection(URI("postgres://localhost:5432/swift_test"))
@@ -43,7 +117,6 @@ class PostgreSQLTests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        
         do {
             try connection.open()
             try connection.execute("DROP TABLE IF EXISTS albums")
@@ -51,7 +124,10 @@ class PostgreSQLTests: XCTestCase {
             try connection.execute("CREATE TABLE IF NOT EXISTS artists(id SERIAL PRIMARY KEY, genre VARCHAR(50), name VARCHAR(255))")
             try connection.execute("CREATE TABLE IF NOT EXISTS albums(id SERIAL PRIMARY KEY, name VARCHAR(255), artist_id int references artists(id))")
             
+            try connection.execute("INSERT INTO artists (name, genre) VALUES('Josh Rouse', 'Country')")
+            
             connection.logger = logger
+            
             
         }
         catch {
@@ -59,95 +135,64 @@ class PostgreSQLTests: XCTestCase {
         }
     }
     
-    func testGenerator() {
+    func testSimpleRawQueries() throws {
+        try connection.execute("SELECT * FROM artists")
+        let result = try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
+
+        XCTAssert(try result.first?.value("name") == "Josh Rouse")
+    }
+    
+    func testBulk() {
         do {
-            try Insert(["name": "Lady Gaga"], into: "artists").execute(connection)
-            try Insert(["name": "Mike Snow"], into: "artists").execute(connection)
+            for i in 0..<300 {
+                var entity = Entity(model: Artist(name: "NAME \(i)", genre: "GENRE \(i)"))
+                try entity.save(connection: connection)
+            }
             
-            for row in try connection.execute("SELECT * FROM artists") {
-                let name: String? = try row.value("name")
-                let data = try row.data("name")
-                
-                print(name)
-                print(data)
+            measure {
+                do {
+                    let result = try Entity<Artist>.fetchAll(connection: self.connection)
+                    
+                    for artist in result {
+                        print(artist.model.genre)
+                    }
+                }
+                catch {
+                    XCTFail("\(error)")
+                }
             }
         }
         catch {
+            print("ERROR")
             XCTFail("\(error)")
         }
     }
     
-    func testSimpleQueries() {
-        do {
-            try connection.execute("SELECT * FROM artists")
-            try connection.execute("SELECT * FROM artists WHERE name = %@", parameters: "Josh Rouse")
-        }
-        catch {
-            XCTFail("\(error)")
-        }
-    }
-    
-    func testSimpleDSLQueries() {
-        do {
-            try Select(["id", "name"], from: "artists").execute(connection)
-            try Select(from: "artists").execute(connection)
-            try Select(from: "artists").join("albums", using: .Inner, leftKey: "artists.id", rightKey: "albums.artist_id").execute(connection)
-            try Select(from: "artists").limit(10).offset(1).execute(connection)
-            try Select(from: "artists").orderBy(.Descending("name"), .Ascending("id")).execute(connection)
-            
-            try Insert([Artist.field(.Name): "Lady Gaga"], into: Artist.tableName).execute(connection)
-            
-            try Update(Artist.tableName, set: [Artist.field(.Name): "Mike Snow"]).execute(connection)
-            
-            try Delete(from: "albums").execute(connection)
-            
-            try Select(from: "artists").filter(field("genre") == "rock" && field("name").like("%rock") || field("name") == "AC/DC").execute(connection)
-            
-            try Update("artists", set: ["genre": "rock"]).filter(field("name") == "AC/DC").execute(connection)
-            
-            try Delete(from: "artists").filter(field("name") == "Skrillex").execute(connection)
-        }
-        catch {
-            XCTFail("\(error)")
-        }
-    }
-    
-    
-    func testModelDSLQueries() {
+    func testRockArtists() throws {
         
+
         do {
-            try Artist.selectQuery.fetch(connection)
-            try Artist.get(1, connection: connection)
+            let artists = try Entity<Artist>.fetchAll(connection: connection)
             
-            try Artist.selectQuery.limit(10).offset(1).execute(connection)
-            try Artist.selectQuery.orderBy(.Descending(.Name), .Ascending(.Id)).execute(connection)
+            try Entity<Artist>.fetchAll(connection: connection)
             
-            Artist.selectQuery.filter(Artist.field(.Id) == 1 || Artist.field(.Genre) == "rock")
+            try connection.begin()
             
-            var newArtist = Artist(name: "AC/DC", genre: "Rock")
-            try newArtist.create(connection)
-            print(newArtist)
+            for var artist in artists {
+                artist.model.genre = "Rock & Roll"
+                try artist.save(connection: connection)
+            }
             
-            var otherNewArtist = Artist(name: "Mötley Crue", genre: "glam rock")
-            try otherNewArtist.create(connection)
-            
-            print(otherNewArtist)
-            
-            Select([Artist.field(.Id)], from: Artist.tableName)
-            
-            var artist = try Artist.selectQuery.first(connection) ?? Artist(name: "Anonymous", genre: "alternative")
-            artist.genre = "UDPATED2"
-            try artist.setNeedsSave(field: .Genre)
-            try artist.save(connection)
-            print(artist)
-            
-            try artist.delete(connection)
+            try connection.commit()
         }
         catch {
-            XCTFail("\(error)")
+            print(error)
+            throw error
         }
         
+        
     }
+    
     
     
     override func tearDown() {
@@ -158,5 +203,3 @@ class PostgreSQLTests: XCTestCase {
         
     }
 }
-
-

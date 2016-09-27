@@ -41,7 +41,7 @@ $ swift build -Xcc -I/usr/local/include -Xlinker -L/usr/local/lib/
 ```
 
 - Generate Xcode project
-```bash 
+```bash
 $ swift build -Xcc -I/usr/local/include -Xlinker -L/usr/local/lib/ -Xswiftc -I/usr/local/include -X
 ```
 
