@@ -85,6 +85,7 @@ public class Result: SQL.ResultProtocol {
         let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex))
         let count = PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex))
 
+		
         let buffer = UnsafeBufferPointer<UInt8>(start: UnsafePointer<UInt8>(start), count: Int(count))
 
         return Data(Array(buffer))
