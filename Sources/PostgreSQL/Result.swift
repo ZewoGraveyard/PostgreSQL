@@ -1,11 +1,12 @@
 import CLibpq
+import Core
 @_exported import SQL
 
-public class Result: SQL.ResultProtocol {
+public enum ResultError: Error {
+	case BadStatus(Result.Status, String)
+}
 
-    public enum Error: ErrorProtocol {
-        case BadStatus(Status, String)
-    }
+public class Result: SQL.ResultProtocol {
 
     public enum Status: Int, ResultStatus {
         case EmptyQuery
@@ -67,7 +68,7 @@ public class Result: SQL.ResultProtocol {
         self.resultPointer = resultPointer
 
         guard status.successful else {
-            throw Error.BadStatus(status, String(validatingUTF8: PQresultErrorMessage(resultPointer)) ?? "No error message")
+            throw ResultError.BadStatus(status, String(validatingUTF8: PQresultErrorMessage(resultPointer)) ?? "No error message")
         }
     }
 
