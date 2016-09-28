@@ -176,3 +176,13 @@ public class PostgreSQLTests: XCTestCase {
         connection.close()
     }
 }
+
+extension PostgreSQLTests {
+    public static var allTests: [(String, (PostgreSQLTests) -> () throws -> Void)] {
+        return [
+            ("testBulk", testBulk),
+            ("testSimpleRawQueries", testSimpleRawQueries),
+            ("testRockArtists", testRockArtists),
+        ]
+    }
+}
