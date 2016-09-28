@@ -107,7 +107,7 @@ public class PostgreSQLTests: XCTestCase {
 
     let logger = Logger(name: "SQL Logger", appenders: [StandardOutputAppender()])
 
-    override func setUp() {
+    override public func setUp() {
         super.setUp()
 
         do {
@@ -169,7 +169,7 @@ public class PostgreSQLTests: XCTestCase {
         try connection.commit()
     }
 
-    override func tearDown() {
+    override public func tearDown() {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
 
