@@ -3,14 +3,13 @@ import CLibpq
 import Core
 
 public struct ConnectionError: Error, CustomStringConvertible {
-	public let description: String
+    public let description: String
 }
 
 public final class Connection: ConnectionProtocol {
     public typealias QueryRenderer = PostgreSQL.QueryRenderer
 
-	public struct ConnectionInfo: ConnectionInfoProtocol {
-		
+    public struct ConnectionInfo: ConnectionInfoProtocol {
         public var host: String
         public var port: Int
         public var databaseName: String
@@ -18,18 +17,18 @@ public final class Connection: ConnectionProtocol {
         public var password: String?
         public var options: String?
         public var tty: String?
-		
-		public init?(uri: URL) {
-			do {
-				try self.init(uri)
-			} catch {
-				return nil
-			}
-		}
-        public init(_ uri: URL) throws {
 
-			let databaseName = uri.path.trim(["/"])
-			
+        public init?(uri: URL) {
+            do {
+                try self.init(uri)
+            } catch {
+                return nil
+            }
+        }
+
+        public init(_ uri: URL) throws {
+            let databaseName = uri.path.trim(["/"])
+
             guard let host = uri.host, let port = uri.port else {
                 throw ConnectionError(description: "Failed to extract host, port, database name from URI")
             }
@@ -39,8 +38,8 @@ public final class Connection: ConnectionProtocol {
             self.databaseName = databaseName
             self.username = uri.user
             self.password = uri.password
-
         }
+
         public init(host: String, port: Int = 5432, databaseName: String, password: String? = nil, options: String? = nil, tty: String? = nil) {
             self.host = host
             self.port = port
@@ -49,9 +48,7 @@ public final class Connection: ConnectionProtocol {
             self.options = options
             self.tty = tty
         }
-		
     }
-
 
     public enum InternalStatus {
         case Bad
@@ -99,7 +96,6 @@ public final class Connection: ConnectionProtocol {
                 break
             }
         }
-
     }
 
     public var logger: Logger?
@@ -150,7 +146,7 @@ public final class Connection: ConnectionProtocol {
     }
 
     public func createSavePointNamed(_ name: String) throws {
-		try execute("SAVEPOINT \(name)", parameters: nil)
+        try execute("SAVEPOINT \(name)", parameters: nil)
     }
 
     public func rollbackToSavePointNamed(_ name: String) throws {
@@ -196,7 +192,7 @@ public final class Connection: ConnectionProtocol {
             }
         }
 
-		
+
         guard let result:OpaquePointer = PQexecParams(
             self.connection,
             statement,
