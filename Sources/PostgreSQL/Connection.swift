@@ -104,7 +104,7 @@ public final class Connection: ConnectionProtocol {
 
     public let connectionInfo: ConnectionInfo
 
-    public required init(_ info: ConnectionInfo) {
+    public required init(info: ConnectionInfo) {
         self.connectionInfo = info
     }
 
@@ -132,7 +132,7 @@ public final class Connection: ConnectionProtocol {
         }
     }
 
-    public var mostRecentError: Error? {
+    public var mostRecentError: ConnectionError? {
         guard let errorString = String(validatingUTF8: PQerrorMessage(connection)), !errorString.isEmpty else {
             return nil
         }
@@ -157,6 +157,7 @@ public final class Connection: ConnectionProtocol {
         try execute("RELEASE SAVEPOINT \(name)", parameters: nil)
     }
 
+    @discardableResult
     public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {
 
         var statement = statement.sqlStringWithEscapedPlaceholdersUsingPrefix("$") {
@@ -173,7 +174,9 @@ public final class Connection: ConnectionProtocol {
             return try Result(resultPointer)
         }
 
-        var parameterData = [[UInt8]?]()
+        var parameterData = [UnsafePointer<Int8>?]()
+        var deallocators = [() -> ()]()
+        defer { deallocators.forEach { $0() } }
 
         for parameter in parameters {
 
@@ -182,28 +185,41 @@ public final class Connection: ConnectionProtocol {
                 continue
             }
 
+            let data: AnyCollection<Int8>
             switch value {
-            case .data(let data):
-                parameterData.append(Array(data))
-                break
+            case .data(let value):
+                data = AnyCollection(value.map { Int8($0) })
+
             case .string(let string):
-                parameterData.append(Array(string.utf8) + [0])
-                break
+                data = AnyCollection(string.utf8CString)
             }
+
+            let pointer = UnsafeMutablePointer<Int8>.allocate(capacity: Int(data.count))
+            deallocators.append {
+                pointer.deallocate(capacity: Int(data.count))
+            }
+
+            for (index, byte) in data.enumerated() {
+                pointer[index] = byte
+            }
+
+            parameterData.append(pointer)
         }
 
-
-        guard let result:OpaquePointer = PQexecParams(
-            self.connection,
-            statement,
-            Int32(parameters.count),
-            nil,
-            parameterData.map { UnsafePointer<Int8>($0) },
-            nil,
-            nil,
-            0
-            ) else {
-                throw mostRecentError ?? ConnectionError(description: "Empty result")
+        let result: OpaquePointer = try parameterData.withUnsafeBufferPointer { buffer in
+            guard let result = PQexecParams(
+                self.connection,
+                statement,
+                Int32(parameters.count),
+                nil,
+                buffer.isEmpty ? nil : buffer.baseAddress,
+                nil,
+                nil,
+                0
+                ) else {
+                    throw mostRecentError ?? ConnectionError(description: "Empty result")
+            }
+            return result
         }
 
         return try Result(result)
