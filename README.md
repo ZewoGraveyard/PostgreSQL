@@ -75,7 +75,7 @@ Join us on [Slack](http://slack.zewo.io).
 [slack-image]: http://s13.postimg.org/ybwy92ktf/Slack.png
 [slack-badge]: https://zewo-slackin.herokuapp.com/badge.svg
 [slack-url]: http://slack.zewo.io
-[travis-badge]: https://travis-ci.org/Zewo/SQL.svg?branch=master
-[travis-url]: https://travis-ci.org/Zewo/SQL
+[travis-badge]: https://travis-ci.org/Zewo/PostgreSQL.svg?branch=master
+[travis-url]: https://travis-ci.org/Zewo/PostgreSQL
 [codebeat-badge]: https://codebeat.co/badges/2548b359-daf1-404b-b5ae-687b98c02101
 [codebeat-url]: https://codebeat.co/projects/github-com-zewo-postgresql
