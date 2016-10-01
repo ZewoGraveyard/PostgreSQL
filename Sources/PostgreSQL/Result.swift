@@ -1,11 +1,12 @@
 import CLibpq
+import Core
 @_exported import SQL
 
-public class Result: SQL.ResultProtocol {
+public enum ResultError: Error {
+    case badStatus(Result.Status, String)
+}
 
-    public enum Error: ErrorProtocol {
-        case BadStatus(Status, String)
-    }
+public class Result: SQL.ResultProtocol {
 
     public enum Status: Int, ResultStatus {
         case EmptyQuery
@@ -67,7 +68,7 @@ public class Result: SQL.ResultProtocol {
         self.resultPointer = resultPointer
 
         guard status.successful else {
-            throw Error.BadStatus(status, String(validatingUTF8: PQresultErrorMessage(resultPointer)) ?? "No error message")
+            throw ResultError.badStatus(status, String(validatingUTF8: PQresultErrorMessage(resultPointer)) ?? "No error message")
         }
     }
 
@@ -81,12 +82,14 @@ public class Result: SQL.ResultProtocol {
 
     public func data(atRow rowIndex: Int, forFieldIndex fieldIndex: Int) -> Data? {
 
-        let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex))
         let count = PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex))
+        guard count > 0, let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex)) else {
+            return Data()
+        }
 
-        let buffer = UnsafeBufferPointer<UInt8>(start: UnsafePointer<UInt8>(start), count: Int(count))
-
-        return Data(Array(buffer))
+        return start.withMemoryRebound(to: UInt8.self, capacity: Int(count)) { start in
+            return Data(Array(UnsafeBufferPointer(start: start, count: Int(count))))
+        }
     }
 
     public var count: Int {
@@ -123,6 +126,5 @@ public class Result: SQL.ResultProtocol {
         }
 
         return result
-
     }()
 }

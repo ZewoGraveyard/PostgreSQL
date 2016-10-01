@@ -1,12 +1,13 @@
 @_exported import SQL
 import CLibpq
+import Core
+
+public struct ConnectionError: Error, CustomStringConvertible {
+    public let description: String
+}
 
 public final class Connection: ConnectionProtocol {
     public typealias QueryRenderer = PostgreSQL.QueryRenderer
-
-    public struct Error: ErrorProtocol, CustomStringConvertible {
-        public let description: String
-    }
 
     public struct ConnectionInfo: ConnectionInfoProtocol {
         public var host: String
@@ -17,19 +18,28 @@ public final class Connection: ConnectionProtocol {
         public var options: String?
         public var tty: String?
 
-        public init(_ uri: URI) throws {
+        public init?(uri: URL) {
+            do {
+                try self.init(uri)
+            } catch {
+                return nil
+            }
+        }
 
-            guard let host = uri.host, port = uri.port, databaseName = uri.path?.trim(["/"]) else {
-                throw Error(description: "Failed to extract host, port, database name from URI")
+        public init(_ uri: URL) throws {
+            let databaseName = uri.path.trim(["/"])
+
+            guard let host = uri.host, let port = uri.port else {
+                throw ConnectionError(description: "Failed to extract host, port, database name from URI")
             }
 
             self.host = host
             self.port = port
             self.databaseName = databaseName
-            self.username = uri.userInfo?.username
-            self.password = uri.userInfo?.password
-
+            self.username = uri.user
+            self.password = uri.password
         }
+
         public init(host: String, port: Int = 5432, databaseName: String, password: String? = nil, options: String? = nil, tty: String? = nil) {
             self.host = host
             self.port = port
@@ -39,7 +49,6 @@ public final class Connection: ConnectionProtocol {
             self.tty = tty
         }
     }
-
 
     public enum InternalStatus {
         case Bad
@@ -87,7 +96,6 @@ public final class Connection: ConnectionProtocol {
                 break
             }
         }
-
     }
 
     public var logger: Logger?
@@ -96,7 +104,7 @@ public final class Connection: ConnectionProtocol {
 
     public let connectionInfo: ConnectionInfo
 
-    public required init(_ info: ConnectionInfo) {
+    public required init(info: ConnectionInfo) {
         self.connectionInfo = info
     }
 
@@ -124,12 +132,12 @@ public final class Connection: ConnectionProtocol {
         }
     }
 
-    public var mostRecentError: Error? {
-        guard let errorString = String(validatingUTF8: PQerrorMessage(connection)) where !errorString.isEmpty else {
+    public var mostRecentError: ConnectionError? {
+        guard let errorString = String(validatingUTF8: PQerrorMessage(connection)), !errorString.isEmpty else {
             return nil
         }
 
-        return Error(description: errorString)
+        return ConnectionError(description: errorString)
     }
 
     public func close() {
@@ -138,17 +146,18 @@ public final class Connection: ConnectionProtocol {
     }
 
     public func createSavePointNamed(_ name: String) throws {
-        try execute("SAVEPOINT \(name)")
+        try execute("SAVEPOINT \(name)", parameters: nil)
     }
 
     public func rollbackToSavePointNamed(_ name: String) throws {
-        try execute("ROLLBACK TO SAVEPOINT \(name)")
+        try execute("ROLLBACK TO SAVEPOINT \(name)", parameters: nil)
     }
 
     public func releaseSavePointNamed(_ name: String) throws {
-        try execute("RELEASE SAVEPOINT \(name)")
+        try execute("RELEASE SAVEPOINT \(name)", parameters: nil)
     }
 
+    @discardableResult
     public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {
 
         var statement = statement.sqlStringWithEscapedPlaceholdersUsingPrefix("$") {
@@ -159,13 +168,15 @@ public final class Connection: ConnectionProtocol {
 
         guard let parameters = parameters else {
             guard let resultPointer = PQexec(connection, statement) else {
-                throw mostRecentError ?? Error(description: "Empty result")
+                throw mostRecentError ?? ConnectionError(description: "Empty result")
             }
 
             return try Result(resultPointer)
         }
 
-        var parameterData = [[UInt8]?]()
+        var parameterData = [UnsafePointer<Int8>?]()
+        var deallocators = [() -> ()]()
+        defer { deallocators.forEach { $0() } }
 
         for parameter in parameters {
 
@@ -174,28 +185,41 @@ public final class Connection: ConnectionProtocol {
                 continue
             }
 
+            let data: AnyCollection<Int8>
             switch value {
-            case .data(let data):
-                parameterData.append(Array(data))
-                break
+            case .data(let value):
+                data = AnyCollection(value.map { Int8($0) })
+
             case .string(let string):
-                parameterData.append(Array(string.utf8) + [0])
-                break
+                data = AnyCollection(string.utf8CString)
             }
+
+            let pointer = UnsafeMutablePointer<Int8>.allocate(capacity: Int(data.count))
+            deallocators.append {
+                pointer.deallocate(capacity: Int(data.count))
+            }
+
+            for (index, byte) in data.enumerated() {
+                pointer[index] = byte
+            }
+
+            parameterData.append(pointer)
         }
 
-
-        guard let result:OpaquePointer = PQexecParams(
-            self.connection,
-            statement,
-            Int32(parameters.count),
-            nil,
-            parameterData.map { UnsafePointer<Int8>($0) },
-            nil,
-            nil,
-            0
-            ) else {
-                throw mostRecentError ?? Error(description: "Empty result")
+        let result: OpaquePointer = try parameterData.withUnsafeBufferPointer { buffer in
+            guard let result = PQexecParams(
+                self.connection,
+                statement,
+                Int32(parameters.count),
+                nil,
+                buffer.isEmpty ? nil : buffer.baseAddress,
+                nil,
+                nil,
+                0
+                ) else {
+                    throw mostRecentError ?? ConnectionError(description: "Empty result")
+            }
+            return result
         }
 
         return try Result(result)
