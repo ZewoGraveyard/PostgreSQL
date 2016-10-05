@@ -33,7 +33,7 @@ import PackageDescription
 
 let package = Package(
     dependencies: [
-        .Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0, minor: 13)
+        .Package(url: "https://github.com/Zewo/PostgreSQL.git", majorVersion: 0, minor: 14)
     ]
 )
 
@@ -66,7 +66,7 @@ Join us on [Slack](http://slack.zewo.io).
 
 [swift-badge]: https://img.shields.io/badge/Swift-3.0-orange.svg?style=flat
 [swift-url]: https://swift.org
-[zewo-badge]: https://img.shields.io/badge/Zewo-0.13-FF7565.svg?style=flat
+[zewo-badge]: https://img.shields.io/badge/Zewo-0.14-FF7565.svg?style=flat
 [zewo-url]: http://zewo.io
 [platform-badge]: https://img.shields.io/badge/Platform-Mac%20%26%20Linux-lightgray.svg?style=flat
 [platform-url]: https://swift.org
