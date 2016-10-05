@@ -1,6 +1,6 @@
 @_exported import SQL
 import CLibpq
-import Core
+import Axis
 
 public struct ConnectionError: Error, CustomStringConvertible {
     public let description: String
@@ -187,7 +187,7 @@ public final class Connection: ConnectionProtocol {
 
             let data: AnyCollection<Int8>
             switch value {
-            case .data(let value):
+            case .buffer(let value):
                 data = AnyCollection(value.map { Int8($0) })
 
             case .string(let string):

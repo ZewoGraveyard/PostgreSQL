@@ -1,5 +1,5 @@
 import CLibpq
-import Core
+import Axis
 @_exported import SQL
 
 public enum ResultError: Error {
@@ -80,15 +80,15 @@ public class Result: SQL.ResultProtocol {
         return Row(result: self, index: position)
     }
 
-    public func data(atRow rowIndex: Int, forFieldIndex fieldIndex: Int) -> Data? {
+    public func data(atRow rowIndex: Int, forFieldIndex fieldIndex: Int) -> Buffer? {
 
         let count = PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex))
         guard count > 0, let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex)) else {
-            return Data()
+            return Buffer()
         }
 
         return start.withMemoryRebound(to: UInt8.self, capacity: Int(count)) { start in
-            return Data(Array(UnsafeBufferPointer(start: start, count: Int(count))))
+            return Buffer(Array(UnsafeBufferPointer(start: start, count: Int(count))))
         }
     }
 
