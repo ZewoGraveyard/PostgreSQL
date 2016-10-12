@@ -8,7 +8,7 @@
 
 import XCTest
 @testable import PostgreSQL
-import Core
+import Axis
 
 public final class StandardOutputAppender: Appender {
     public var name: String = "Standard Output Appender"
