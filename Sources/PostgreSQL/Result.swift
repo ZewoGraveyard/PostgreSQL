@@ -84,7 +84,7 @@ public class Result: SQL.ResultProtocol {
 
         let count = PQgetlength(resultPointer, Int32(rowIndex), Int32(fieldIndex))
         guard count > 0, let start = PQgetvalue(resultPointer, Int32(rowIndex), Int32(fieldIndex)) else {
-            return Buffer()
+            return nil
         }
 
         return start.withMemoryRebound(to: UInt8.self, capacity: Int(count)) { start in
