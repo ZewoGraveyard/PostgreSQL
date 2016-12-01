@@ -1,4 +1,5 @@
 @_exported import SQL
+import Foundation
 import CLibpq
 import CLibvenice
 import Axis
@@ -17,7 +18,6 @@ public final class Connection: ConnectionProtocol {
         public var username: String?
         public var password: String?
         public var options: String?
-        public var tty: String?
 
         public init?(uri: URL) {
             do {
@@ -41,14 +41,13 @@ public final class Connection: ConnectionProtocol {
             self.password = uri.password
         }
 
-        public init(host: String, port: Int = 5432, databaseName: String, username: String? = nil, password: String? = nil, options: String? = nil, tty: String? = nil) {
+        public init(host: String, port: Int = 5432, databaseName: String, username: String? = nil, password: String? = nil, options: String? = nil) {
             self.host = host
             self.port = port
             self.databaseName = databaseName
             self.username = username
             self.password = password
             self.options = options
-            self.tty = tty
         }
     }
 
@@ -124,27 +123,61 @@ public final class Connection: ConnectionProtocol {
             throw ConnectionError(description: "Connection already opened.")
         }
         
-        connection = PQsetdbLogin(
-            connectionInfo.host,
-            String(connectionInfo.port),
-            connectionInfo.options ?? "",
-            connectionInfo.tty ?? "",
-            connectionInfo.databaseName,
-            connectionInfo.username ?? "",
-            connectionInfo.password ?? ""
-        )
-
-        guard PQstatus(connection) == CONNECTION_OK else {
-            throw mostRecentError ?? ConnectionError(description: "Could not connect to Postgres Server.")
+        print("==============> OPEN")
+        
+        var components = URLComponents()
+        components.scheme = "postgres"
+        components.host = connectionInfo.host
+        components.port = connectionInfo.port
+        components.user = connectionInfo.username
+        components.password = connectionInfo.password
+        components.path = "/\(connectionInfo.databaseName)"
+        if let options = connectionInfo.options {
+            components.queryItems = [URLQueryItem(name: "options", value: options)]
         }
-
-        guard PQsetnonblocking(connection, 1) == 0 else {
-            throw mostRecentError ?? ConnectionError(description: "Could not set to non-blocking mode.")
+        let url = components.url!.absoluteString
+        
+        connection = PQconnectStart(url)
+        
+        guard connection != nil else {
+            throw ConnectionError(description: "Could not allocate connection.")
         }
-
+        
+        guard PQstatus(connection) != CONNECTION_BAD else {
+            throw ConnectionError(description: "Could not start connection.")
+        }
+        
         fd = PQsocket(connection)
         guard fd >= 0 else {
             throw mostRecentError ?? ConnectionError(description: "Could not get file descriptor.")
+        }
+
+        loop: while true {
+            let status = PQconnectPoll(connection)
+            switch status {
+            case PGRES_POLLING_OK:
+                break loop
+            case PGRES_POLLING_READING:
+                mill_fdwait_(fd, FDW_IN, 15.seconds.fromNow().int64milliseconds, nil)
+                mill_fdclean_(fd)
+            case PGRES_POLLING_WRITING:
+                mill_fdwait_(fd, FDW_OUT, 15.seconds.fromNow().int64milliseconds, nil)
+                mill_fdclean_(fd)
+            case PGRES_POLLING_ACTIVE:
+                break
+            case PGRES_POLLING_FAILED:
+                throw mostRecentError ?? ConnectionError(description: "Could not connect to Postgres Server.")
+            default:
+                break
+            }
+        }
+        
+        guard PQsetnonblocking(connection, 1) == 0 else {
+            throw mostRecentError ?? ConnectionError(description: "Could not set to non-blocking mode.")
+        }
+        
+        guard PQstatus(connection) == CONNECTION_OK else {
+            throw mostRecentError ?? ConnectionError(description: "Could not connect to Postgres Server.")
         }
     }
 
@@ -239,6 +272,7 @@ public final class Connection: ConnectionProtocol {
         // write query
         while true {
             mill_fdwait_(fd, FDW_OUT, -1, nil)
+            mill_fdclean_(fd)
             let status = PQflush(connection)
             guard status >= 0 else {
                 throw mostRecentError ?? ConnectionError(description: "Could not send query.")
@@ -258,6 +292,7 @@ public final class Connection: ConnectionProtocol {
 
             guard PQisBusy(connection) == 0 else {
                 mill_fdwait_(fd, FDW_IN, -1, nil)
+                mill_fdclean_(fd)
                 continue
             }
 
@@ -283,4 +318,36 @@ public final class Connection: ConnectionProtocol {
         }
         return try Result(lastResult!)
     }
+}
+
+extension Collection where Iterator.Element == String {
+    
+    func withUnsafeCStringArray<T>(_ body: (UnsafePointer<UnsafePointer<Int8>?>) throws -> T) rethrows -> T {
+        var pointers: [UnsafePointer<Int8>?] = []
+        var deallocators: [() -> ()] = []
+        defer {
+            for deallocator in deallocators {
+                deallocator()
+            }
+        }
+        
+        for string in self {
+            string.utf8CString.withUnsafeBufferPointer {
+                let count = $0.count
+                if count > 0 {
+                    let copy = UnsafeMutablePointer<Int8>.allocate(capacity: count)
+                    deallocators.append { copy.deallocate(capacity: count) }
+                    memcpy(copy, $0.baseAddress!, count)
+                    pointers.append(copy)
+                } else {
+                    pointers.append(nil)
+                }
+            }
+        }
+        
+        return try pointers.withUnsafeBufferPointer {
+            try body($0.baseAddress!)
+        }
+    }
+
 }
