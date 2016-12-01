@@ -123,8 +123,6 @@ public final class Connection: ConnectionProtocol {
             throw ConnectionError(description: "Connection already opened.")
         }
         
-        print("==============> OPEN")
-        
         var components = URLComponents()
         components.scheme = "postgres"
         components.host = connectionInfo.host
