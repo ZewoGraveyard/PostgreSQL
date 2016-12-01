@@ -120,6 +120,10 @@ public final class Connection: ConnectionProtocol {
     }
 
     public func open() throws {
+        guard connection == nil else {
+            throw ConnectionError(description: "Connection already opened.")
+        }
+        
         connection = PQsetdbLogin(
             connectionInfo.host,
             String(connectionInfo.port),
@@ -153,8 +157,10 @@ public final class Connection: ConnectionProtocol {
     }
 
     public func close() {
-        PQfinish(connection)
-        connection = nil
+        if connection != nil {
+            PQfinish(connection!)
+            connection = nil
+        }
     }
 
     public func createSavePointNamed(_ name: String) throws {
