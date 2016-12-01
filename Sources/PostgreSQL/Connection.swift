@@ -1,5 +1,6 @@
 @_exported import SQL
 import CLibpq
+import CLibvenice
 import Axis
 
 public struct ConnectionError: Error, CustomStringConvertible {
@@ -102,6 +103,7 @@ public final class Connection: ConnectionProtocol {
     public var logger: Logger?
 
     private var connection: OpaquePointer? = nil
+    private var fd: Int32 = -1
 
     public let connectionInfo: ConnectionInfo
 
@@ -128,8 +130,17 @@ public final class Connection: ConnectionProtocol {
             connectionInfo.password ?? ""
         )
 
-        if let error = mostRecentError {
-            throw error
+        guard PQstatus(connection) == CONNECTION_OK else {
+            throw mostRecentError ?? ConnectionError(description: "Could not connect to Postgres Server.")
+        }
+
+        guard PQsetnonblocking(connection, 1) == 0 else {
+            throw mostRecentError ?? ConnectionError(description: "Could not set to non-blocking mode.")
+        }
+
+        fd = PQsocket(connection)
+        guard fd >= 0 else {
+            throw mostRecentError ?? ConnectionError(description: "Could not get file descriptor.")
         }
     }
 
@@ -147,82 +158,123 @@ public final class Connection: ConnectionProtocol {
     }
 
     public func createSavePointNamed(_ name: String) throws {
-        try execute("SAVEPOINT \(name)", parameters: nil)
+        try execute("SAVEPOINT ?", parameters: [.string(name)])
     }
 
     public func rollbackToSavePointNamed(_ name: String) throws {
-        try execute("ROLLBACK TO SAVEPOINT \(name)", parameters: nil)
+        try execute("ROLLBACK TO SAVEPOINT ?", parameters: [.string(name)])
     }
 
     public func releaseSavePointNamed(_ name: String) throws {
-        try execute("RELEASE SAVEPOINT \(name)", parameters: nil)
+        try execute("RELEASE SAVEPOINT ?", parameters: [.string(name)])
     }
 
     @discardableResult
     public func execute(_ statement: String, parameters: [Value?]?) throws -> Result {
-
         var statement = statement.sqlStringWithEscapedPlaceholdersUsingPrefix("$") {
             return String($0 + 1)
         }
 
         defer { logger?.debug(statement) }
 
-        guard let parameters = parameters else {
-            guard let resultPointer = PQexec(connection, statement) else {
-                throw mostRecentError ?? ConnectionError(description: "Empty result")
-            }
-
-            return try Result(resultPointer)
-        }
-
         var parameterData = [UnsafePointer<Int8>?]()
         var deallocators = [() -> ()]()
         defer { deallocators.forEach { $0() } }
 
-        for parameter in parameters {
+        if let parameters = parameters {
+            for parameter in parameters {
 
-            guard let value = parameter else {
-                parameterData.append(nil)
+                guard let value = parameter else {
+                    parameterData.append(nil)
+                    continue
+                }
+
+                let data: AnyCollection<Int8>
+                switch value {
+                case .buffer(let value):
+                    data = AnyCollection(value.map { Int8($0) })
+
+                case .string(let string):
+                    data = AnyCollection(string.utf8CString)
+                }
+
+                let pointer = UnsafeMutablePointer<Int8>.allocate(capacity: Int(data.count))
+                deallocators.append {
+                    pointer.deallocate(capacity: Int(data.count))
+                }
+
+                for (index, byte) in data.enumerated() {
+                    pointer[index] = byte
+                }
+
+                parameterData.append(pointer)
+            }
+        }
+
+        let sendResult: Int32 = parameterData.withUnsafeBufferPointer { buffer in
+            if buffer.isEmpty {
+                return PQsendQuery(self.connection, statement)
+            } else {
+                return PQsendQueryParams(self.connection,
+                                         statement,
+                                         Int32(parameterData.count),
+                                         nil,
+                                         buffer.baseAddress!,
+                                         nil,
+                                         nil,
+                                         0)
+            }
+        }
+
+        guard sendResult == 1 else {
+            throw mostRecentError ?? ConnectionError(description: "Could not send query.")
+        }
+
+        // write query
+        while true {
+            mill_fdwait_(fd, FDW_OUT, -1, nil)
+            let status = PQflush(connection)
+            guard status >= 0 else {
+                throw mostRecentError ?? ConnectionError(description: "Could not send query.")
+            }
+            guard status == 0 else {
+                continue
+            }
+            break
+        }
+
+        // read response
+        var lastResult: OpaquePointer? = nil
+        while true {
+            guard PQconsumeInput(connection) == 1 else {
+                throw mostRecentError ?? ConnectionError(description: "Could not send query.")
+            }
+
+            guard PQisBusy(connection) == 0 else {
+                mill_fdwait_(fd, FDW_IN, -1, nil)
                 continue
             }
 
-            let data: AnyCollection<Int8>
-            switch value {
-            case .buffer(let value):
-                data = AnyCollection(value.map { Int8($0) })
-
-            case .string(let string):
-                data = AnyCollection(string.utf8CString)
+            guard let result = PQgetResult(connection) else {
+                break
             }
 
-            let pointer = UnsafeMutablePointer<Int8>.allocate(capacity: Int(data.count))
-            deallocators.append {
-                pointer.deallocate(capacity: Int(data.count))
+            if lastResult != nil {
+                PQclear(lastResult!)
+                lastResult = nil
             }
 
-            for (index, byte) in data.enumerated() {
-                pointer[index] = byte
+            let status = PQresultStatus(result)
+            guard status == PGRES_COMMAND_OK || status == PGRES_TUPLES_OK else {
+                throw mostRecentError ?? ConnectionError(description: "Query failed.")
             }
 
-            parameterData.append(pointer)
+            lastResult = result
         }
 
-        let result: OpaquePointer = try parameterData.withUnsafeBufferPointer { buffer in
-            guard let result = PQexecParams(
-                self.connection,
-                statement,
-                Int32(parameters.count),
-                nil,
-                buffer.isEmpty ? nil : buffer.baseAddress,
-                nil,
-                nil,
-                0
-                ) else {
-                    throw mostRecentError ?? ConnectionError(description: "Empty result")
-            }
-            return result
+        guard lastResult != nil else {
+            throw mostRecentError ?? ConnectionError(description: "Query failed.")
         }
-
-        return try Result(result)
+        return try Result(lastResult!)
     }
 }

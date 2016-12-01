@@ -103,14 +103,15 @@ extension Album: ModelProtocol {
 // MARK: - Tests
 
 public class PostgreSQLTests: XCTestCase {
-    let connection = try! PostgreSQL.Connection(info: .init(URL(string: "postgres://localhost:5432/swift_test")!))
+    var connection: Connection!
 
     let logger = Logger(name: "SQL Logger", appenders: [StandardOutputAppender()])
 
     override public func setUp() {
         super.setUp()
-
+        
         do {
+            connection = try! PostgreSQL.Connection(info: .init(URL(string: "postgres://localhost:5432/swift_test")!))
             try connection.open()
             try connection.execute("DROP TABLE IF EXISTS albums")
             try connection.execute("DROP TABLE IF EXISTS artists")
