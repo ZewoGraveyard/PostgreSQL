@@ -156,11 +156,11 @@ public final class Connection: ConnectionProtocol {
             case PGRES_POLLING_OK:
                 break loop
             case PGRES_POLLING_READING:
-                mill_fdwait_(fd, FDW_IN, 15.seconds.fromNow().int64milliseconds, nil)
-                mill_fdclean_(fd)
+                mill_fdwait(fd, FDW_IN, 15.seconds.fromNow().int64milliseconds, nil)
+                fdclean(fd)
             case PGRES_POLLING_WRITING:
-                mill_fdwait_(fd, FDW_OUT, 15.seconds.fromNow().int64milliseconds, nil)
-                mill_fdclean_(fd)
+                mill_fdwait(fd, FDW_OUT, 15.seconds.fromNow().int64milliseconds, nil)
+                fdclean(fd)
             case PGRES_POLLING_ACTIVE:
                 break
             case PGRES_POLLING_FAILED:
@@ -269,8 +269,8 @@ public final class Connection: ConnectionProtocol {
 
         // write query
         while true {
-            mill_fdwait_(fd, FDW_OUT, -1, nil)
-            mill_fdclean_(fd)
+            mill_fdwait(fd, FDW_OUT, -1, nil)
+            fdclean(fd)
             let status = PQflush(connection)
             guard status >= 0 else {
                 throw mostRecentError ?? ConnectionError(description: "Could not send query.")
@@ -289,8 +289,8 @@ public final class Connection: ConnectionProtocol {
             }
 
             guard PQisBusy(connection) == 0 else {
-                mill_fdwait_(fd, FDW_IN, -1, nil)
-                mill_fdclean_(fd)
+                mill_fdwait(fd, FDW_IN, -1, nil)
+                fdclean(fd)
                 continue
             }
 
