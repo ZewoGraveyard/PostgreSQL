@@ -317,35 +317,3 @@ public final class Connection: ConnectionProtocol {
         return try Result(lastResult!)
     }
 }
-
-extension Collection where Iterator.Element == String {
-    
-    func withUnsafeCStringArray<T>(_ body: (UnsafePointer<UnsafePointer<Int8>?>) throws -> T) rethrows -> T {
-        var pointers: [UnsafePointer<Int8>?] = []
-        var deallocators: [() -> ()] = []
-        defer {
-            for deallocator in deallocators {
-                deallocator()
-            }
-        }
-        
-        for string in self {
-            string.utf8CString.withUnsafeBufferPointer {
-                let count = $0.count
-                if count > 0 {
-                    let copy = UnsafeMutablePointer<Int8>.allocate(capacity: count)
-                    deallocators.append { copy.deallocate(capacity: count) }
-                    memcpy(copy, $0.baseAddress!, count)
-                    pointers.append(copy)
-                } else {
-                    pointers.append(nil)
-                }
-            }
-        }
-        
-        return try pointers.withUnsafeBufferPointer {
-            try body($0.baseAddress!)
-        }
-    }
-
-}
